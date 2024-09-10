@@ -25,6 +25,8 @@ ErrorDocument 404 /client/index.php
 
 Options +FollowSymlinks -MultiViews
 RewriteEngine On
+CheckSpelling On
+CheckCaseOnly On
 
 # Replace bmp to png
 RewriteRule ^(.*)\.bmp$   $1\.png [NC,QSA]
