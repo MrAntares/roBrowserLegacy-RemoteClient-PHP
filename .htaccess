@@ -25,8 +25,11 @@ ErrorDocument 404 /client/index.php
 
 Options +FollowSymlinks -MultiViews
 RewriteEngine On
-CheckSpelling On
-CheckCaseOnly On
+
+<IfModule mod_speling.c>
+	CheckSpelling On
+	CheckCaseOnly On
+</Ifmodule>
 
 # Replace bmp to png
 RewriteRule ^(.*)\.bmp$   $1\.png [NC,QSA]
