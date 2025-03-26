@@ -7,8 +7,7 @@
 	require_once('Client.php');
 	$CONFIGS = require_once('configs.php');
 
-
-	// Apply configs
+    // Apply configs
 	if ($CONFIGS['DEBUG']) {
 		Debug::enable();
 	}
@@ -16,11 +15,11 @@
 
 	Client::$path        =  '';
 	Client::$data_ini    =  $CONFIGS['CLIENT_RESPATH'] . $CONFIGS['CLIENT_DATAINI'];
-	Client::$AutoExtract =  $CONFIGS['CLIENT_AUTOEXTRACT'];
+	Client::$AutoExtract =  (bool)$CONFIGS['CLIENT_AUTOEXTRACT'];
 
 
 	// Initialize client
-	ini_set('memory_limit', '1000M');
+	ini_set('memory_limit', $CONFIGS['MEMORY_LIMIT']);
 	Client::init();
 
 

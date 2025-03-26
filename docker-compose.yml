@@ -1,0 +1,12 @@
+services:
+  robrowser-remote-client-api:
+    env_file:
+      - .env
+    build:
+      context: .
+      dockerfile: Dockerfile
+    volumes:
+      - ./:/var/www/html
+    ports:
+      - "80:80"
+
