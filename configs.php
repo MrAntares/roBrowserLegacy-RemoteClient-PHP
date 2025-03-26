@@ -4,23 +4,23 @@
 
 
 		/**
-		 * If debug mode is set to true, you will be able to see some trace informations and
+		 * If debug mode is set to true, you will be able to see some trace information and
 		 * locate more easily errors.
 		 *
 		 * Note: once the bugs are resolved, set it to false else roBrowser will not be
 		 * able to work properly.
 		 */
-		'DEBUG'               =>     false,
+        'DEBUG'               => getenv('DEBUG') ? filter_var(getenv('DEBUG'), FILTER_VALIDATE_BOOLEAN) : false,
 
 
-		/**
+        /**
 		 * Define where is located your full client files
 		 * By default it's on the directory 'resources/' but you can update it if you need
 		 *
 		 * Note: The files required in this directory are DATA.INI and your GRFs files.
 		 *       All others files will not be read.
 		 */
-		'CLIENT_RESPATH'      =>    'resources/',
+        'CLIENT_RESPATH'               =>     getenv('CLIENT_RESPATH') ? getenv('CLIENT_RESPATH'): 'resources/',
 
 
 		/**
@@ -37,7 +37,7 @@
 		 *	1=rdata.grf
 		 *	2=data.grf
 		 */
-		'CLIENT_DATAINI'      =>    'DATA.INI',
+        'CLIENT_DATAINI'               =>     getenv('CLIENT_DATAINI') ? getenv('CLIENT_DATAINI'): 'DATA.INI',
 
 
 		/**
@@ -47,15 +47,22 @@
 		 *
 		 * Note: it required write access to the data folder.
 		 */
-		'CLIENT_AUTOEXTRACT'  =>    false,
+        'CLIENT_AUTOEXTRACT'               => getenv('CLIENT_AUTOEXTRACT') ? filter_var(getenv('CLIENT_AUTOEXTRACT'), FILTER_VALIDATE_BOOLEAN) : false,
 
 
 		/**
-		 * Does we enable post method to get back informations about files stored in GRF ?
-		 * It's used in Grf Viewer to list files of a repertorie or to search files.
+		 * Do we enable post method to get back information about files stored in GRF ?
+		 * It's used in Grf Viewer to list files of a repertoire or to search files.
 		 *
 		 * If you don't use the Grf Viewer, Model Viewer, Map Viewer and Str Viewer you
 		 * can just disable this feature.
 		 */
-		'CLIENT_ENABLESEARCH' =>    false,
+        'CLIENT_ENABLESEARCH'               => getenv('CLIENT_ENABLESEARCH') ? filter_var(getenv('CLIENT_ENABLESEARCH'), FILTER_VALIDATE_BOOLEAN): false,
+
+
+		/**
+		 * Set the script memory limit. This value should follow the php documentation on how to set the values.
+         * @see https://www.php.net/manual/en/ini.core.php#ini.memory-limit
+		 */
+        'MEMORY_LIMIT'               =>     getenv('MEMORY_LIMIT') ? getenv('MEMORY_LIMIT'): '1000M',
 	);

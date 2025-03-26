@@ -36,3 +36,32 @@ Open *".htaccess"* file, you will have some example on how to modify the rewrite
 
     #ex : client.myroserver.com/
     ErrorDocument 404 /index.php
+
+## Using Docker container
+
+You can use this setup with the container to run the remote client API. Using docker container does not handle/copy 
+the game files. You need to setup them first on the directory.
+
+Copy the file [.env.example](.env.example) to the same directory as .env
+
+### Using docker compose
+
+Start the services running the following command:
+
+```bash
+docker compose up -d
+```
+
+### Using docker cli
+
+Build the container image:
+
+```bash
+docker build -t remote-client-api:latest .
+```
+
+Run the container:
+
+```bash
+docker run -d -p 80:80 --env-file .env -v ./:/var/www/html remote-client-api:latest
+```
