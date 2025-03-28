@@ -37,7 +37,7 @@
 		}
 
 		$filter = ini_get('magic_quotes_gpc') ? stripslashes($_POST['filter']) : $_POST['filter'];
-		$filter = utf8_decode('/'. $filter. '/i');
+		$filter = mb_convert_encoding('/'. $filter. '/i', 'UTF-8');
 		$list   = Client::search($filter);
 
 		die( implode("\n", $list) );
@@ -54,7 +54,7 @@
 
 
 	// Decode path
-	$path      = str_replace('\\', '/', utf8_decode(urldecode($_SERVER['REQUEST_URI'])));
+	$path      = str_replace('\\', '/', mb_convert_encoding(urldecode($_SERVER['REQUEST_URI']),'UTF-8'));
 	$path      = preg_replace('/\?.*/', '', $path); // remove query
 	$directory = basename(dirname(__FILE__));
 
