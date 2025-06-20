@@ -57,8 +57,8 @@ RewriteRule ^(.*)\.bmp$   $1\.png [NC,QSA]
 	AddType application/ro-altitude        gat
 	AddType application/ro-world           rsw
 	AddType application/ro-model           rsm
-</Ifmodule>
+</IfModule>
 
 <IfModule mod_deflate.c>
 	AddOutputFilterByType DEFLATE application/ro-action application/ro-sprite application/ro-palette application/ro-ground application/ro-altitude application/ro-world application/ro-model text/plain application/xml
-</Ifmodule>
+</IfModule>
