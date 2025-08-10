@@ -57,7 +57,7 @@
 		 * If you don't use the Grf Viewer, Model Viewer, Map Viewer and Str Viewer you
 		 * can just disable this feature.
 		 */
-        'CLIENT_ENABLESEARCH'               => getenv('CLIENT_ENABLESEARCH') ? filter_var(getenv('CLIENT_ENABLESEARCH'), FILTER_VALIDATE_BOOLEAN): true,
+        'CLIENT_ENABLESEARCH'               => getenv('CLIENT_ENABLESEARCH') ? filter_var(getenv('CLIENT_ENABLESEARCH'), FILTER_VALIDATE_BOOLEAN): false,
 
 
 		/**
