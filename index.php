@@ -37,7 +37,6 @@
 		}
 
 		$filter = ini_get('magic_quotes_gpc') ? stripslashes($_POST['filter']) : $_POST['filter'];
-		$filter = mb_convert_encoding('/'. $filter. '/i', 'UTF-8');
 		$list   = Client::search($filter);
 
 		die( implode("\n", $list) );
