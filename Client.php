@@ -215,6 +215,10 @@ final class Client
             return stripos($item, $filter) !== false;
         });
 
+        $matches = array_map(function ($i){
+            return str_replace(getcwd(), '', $i);
+        },$matches);
+
         return array_unique(array_merge($out, $matches));
 	}
 }
