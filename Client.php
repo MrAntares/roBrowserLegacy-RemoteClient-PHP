@@ -32,13 +32,25 @@ final class Client
 	 */
 	static public $AutoExtract = false;
 
+    /**
+     * @var array Stores the file list on the data directory.
+     */
+    static public $FileList = [];
+
 
 	/**
 	 * Initialize client file
 	 */
-	static public function init()
+	static public function init($search_data_dir)
 	{
-		if (empty(self::$data_ini)) {
+        if($search_data_dir) {
+            $iterator = new RecursiveIteratorIterator(new RecursiveDirectoryIterator(getcwd().'/data', FilesystemIterator::SKIP_DOTS));
+            foreach ($iterator as $fi) {
+                self::$FileList[] = $fi->getPathname();
+            }
+        }
+
+        if (empty(self::$data_ini)) {
 			Debug::write('No DATA.INI file defined in configs ?');
 			return;
 		}
@@ -179,31 +191,30 @@ final class Client
 	}
 
 
-
-	/**
-	 * Search files (only work in GRF)
-	 *
-	 * @param {string} regex
-	 * @return {Array} file list
-	 */
+    /**
+     * Search files in the GRF file and on the data directory.
+     *
+     * @param {string} regex
+     * @return array {Array} file list
+     */
 	static public function search($filter) {
 		$out = array();
 
+        $grf_filter = mb_convert_encoding('/'. $filter. '/i', 'UTF-8');
 		foreach (self::$grfs as $grf) {
 
-			// Load GRF only if needed
 			if (!$grf->loaded) {
 				$grf->load();
 			}
 
-			// Search
-			$list = $grf->search($filter);
-
-			// Merge
+			$list = $grf->search($grf_filter);
 			$out  = array_unique( array_merge($out, $list) );
 		}
 
-		//sort($out);
-		return $out;
+        $matches = array_filter(self::$FileList, function($item) use ($filter) {
+            return stripos($item, $filter) !== false;
+        });
+
+        return array_unique(array_merge($out, $matches));
 	}
 }

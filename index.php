@@ -20,7 +20,7 @@
 
 	// Initialize client
 	ini_set('memory_limit', $CONFIGS['MEMORY_LIMIT']);
-	Client::init();
+	Client::init($CONFIGS['CLIENT_ENABLESEARCH']);
 
 
 	/**
