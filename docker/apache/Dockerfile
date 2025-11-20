@@ -1,4 +1,4 @@
-FROM php:8.3-apache AS server
+FROM php:8.3-apache
 
 LABEL org.opencontainers.image.description="Creates a environment to serve PHP files for the Remote Client API."
 
