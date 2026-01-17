@@ -8,6 +8,7 @@ Because pushing directly the fullclient on a server/ftp can provoke some errors,
  - Extracting files directly from GRF archive (versions 0x200 and 0x300 supported - without DES encryption).
  - Converting BMP files to PNG to speed up the transfer.
  - Optimized to don't call any script if files are already extracted/converted (resource friendly).
+ - **HTTP Cache Headers** (ETag, Cache-Control, 304 Not Modified) for browser caching.
  - **LRU Cache** for fast repeated file access (in-memory caching).
 
 ###Add your fullclient###
@@ -19,6 +20,18 @@ Overwrite the `BGM/`, `data/` and `System/` directories with your own folders.
 
 ## Performance Features
 
+### HTTP Cache Headers
+
+The server implements proper HTTP cache headers for browser caching:
+
+- **ETag**: Content-based validation for conditional requests
+- **304 Not Modified**: Reduces bandwidth by validating client cache
+- **Cache-Control**: Optimized per file type
+  - Game assets (sprites, maps, etc.): 1 year with `immutable`
+  - Other files: 30 days
+- **Expires**: HTTP/1.0 compatibility
+
+This significantly reduces bandwidth and speeds up repeated requests, as unchanged files are served from browser cache.
 ### LRU File Cache
 
 The server implements an in-memory LRU (Least Recently Used) cache for file content:
