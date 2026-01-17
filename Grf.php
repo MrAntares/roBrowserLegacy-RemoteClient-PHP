@@ -3,7 +3,7 @@
 /**
 * @fileoverview Grf - Load and Parse .grf file (only 0x200 version without DES encryption).
 * @author Vincent Thibault (alias KeyWorld - Twitter: @robrowser)
-* @version 1.0.0
+* @version 1.1.0
 */
 
 class Grf
@@ -37,6 +37,12 @@ class Grf
 	 * @var {string} filename
 	 */
 	public $filename = '';
+
+
+	/**
+	 * @var {array} cached file list
+	 */
+	private $cachedFileList = null;
 
 
 	/**
@@ -187,5 +193,65 @@ class Grf
 		}
 
 		return $list;
+	}
+
+
+	/**
+	 * Get list of all files in the GRF
+	 * Parses the fileTable to extract all file paths
+	 * Results are cached for performance
+	 *
+	 * @return array List of file paths
+	 */
+	public function getFileList()
+	{
+		if (!$this->loaded) {
+			return [];
+		}
+
+		// Return cached list if available
+		if ($this->cachedFileList !== null) {
+			return $this->cachedFileList;
+		}
+
+		$files = [];
+		$offset = 0;
+		$tableLength = strlen($this->fileTable);
+
+		while ($offset < $tableLength) {
+			// Find null terminator for filename
+			$nullPos = strpos($this->fileTable, "\0", $offset);
+			
+			if ($nullPos === false) {
+				break;
+			}
+
+			// Extract filename
+			$filename = substr($this->fileTable, $offset, $nullPos - $offset);
+			
+			if (strlen($filename) > 0) {
+				$files[] = $filename;
+			}
+
+			// Move past filename + null + 17 bytes of file info
+			// File info: pack_size(4) + length_aligned(4) + real_size(4) + flags(1) + position(4) = 17 bytes
+			$offset = $nullPos + 1 + 17;
+		}
+
+		// Cache the result
+		$this->cachedFileList = $files;
+
+		return $files;
+	}
+
+
+	/**
+	 * Get file count
+	 *
+	 * @return int Number of files in the GRF
+	 */
+	public function getFileCount()
+	{
+		return count($this->getFileList());
 	}
 }

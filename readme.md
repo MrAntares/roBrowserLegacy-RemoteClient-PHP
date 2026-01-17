@@ -8,6 +8,7 @@ Because pushing directly the fullclient on a server/ftp can provoke some errors,
  - Extracting files directly from GRF archive (only version 0x200 supported for now - without DES encryption).
  - Converting BMP files to PNG to speed up the transfer.
  - Optimized to don't call any script if files are already extracted/converted (resource friendly).
+ - **File Index for O(1) lookups**: Files are indexed at startup for instant lookups instead of sequential search through GRFs.
 
 ###Add your fullclient###
 
