@@ -5,7 +5,7 @@ The remote client exist to help users without a FullClient on their computer to 
 Because pushing directly the fullclient on a server/ftp can provoke some errors, this tool allow to :
 
  - Get the files from a client used in another domain (Cross-origin resource sharing).
- - Extracting files directly from GRF archive (only version 0x200 supported for now - without DES encryption).
+ - Extracting files directly from GRF archive (versions 0x200 and 0x300 supported - without DES encryption).
  - Converting BMP files to PNG to speed up the transfer.
  - Optimized to don't call any script if files are already extracted/converted (resource friendly).
  - **File Index for O(1) lookups**: Files are indexed at startup for instant lookups instead of sequential search through GRFs.
