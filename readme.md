@@ -5,7 +5,7 @@ The remote client exist to help users without a FullClient on their computer to 
 Because pushing directly the fullclient on a server/ftp can provoke some errors, this tool allow to :
 
  - Get the files from a client used in another domain (Cross-origin resource sharing).
- - Extracting files directly from GRF archive (only version 0x200 supported for now - without DES encryption).
+ - Extracting files directly from GRF archive (versions 0x200 and 0x300 supported - without DES encryption).
  - Converting BMP files to PNG to speed up the transfer.
  - Optimized to don't call any script if files are already extracted/converted (resource friendly).
  - **LRU Cache** for fast repeated file access (in-memory caching).
@@ -39,6 +39,13 @@ CACHE_MAX_MEMORY_MB=256
 | `CACHE_ENABLED` | Enable/disable cache | `true` |
 | `CACHE_MAX_FILES` | Max files in cache | `100` |
 | `CACHE_MAX_MEMORY_MB` | Max memory usage | `256` MB |
+### GRF Version Support
+
+| Version | Status | Notes |
+|---------|--------|-------|
+| 0x200 | ✅ Supported | 32-bit file offsets, no DES encryption |
+| 0x300 | ✅ Supported | 64-bit file offsets (files > 4GB), no DES encryption |
+| DES Encrypted | ❌ Not Supported | Repack with GRF Builder to remove encryption |
 
 ## Running the Remote Client
 
