@@ -5,10 +5,11 @@ The remote client exist to help users without a FullClient on their computer to 
 Because pushing directly the fullclient on a server/ftp can provoke some errors, this tool allow to :
 
  - Get the files from a client used in another domain (Cross-origin resource sharing).
- - Extracting files directly from GRF archive (only version 0x200 supported for now - without DES encryption).
+ - Extracting files directly from GRF archive (versions 0x200 and 0x300 supported - without DES encryption).
  - Converting BMP files to PNG to speed up the transfer.
  - Optimized to don't call any script if files are already extracted/converted (resource friendly).
  - **HTTP Cache Headers** (ETag, Cache-Control, 304 Not Modified) for browser caching.
+ - **LRU Cache** for fast repeated file access (in-memory caching).
 
 ###Add your fullclient###
 
@@ -31,6 +32,33 @@ The server implements proper HTTP cache headers for browser caching:
 - **Expires**: HTTP/1.0 compatibility
 
 This significantly reduces bandwidth and speeds up repeated requests, as unchanged files are served from browser cache.
+### LRU File Cache
+
+The server implements an in-memory LRU (Least Recently Used) cache for file content:
+
+- **Default**: 100 files, 256MB max memory
+- **O(1)** get/set operations
+- Automatic eviction of least recently used files
+- Configurable via environment variables
+
+```env
+CACHE_ENABLED=true
+CACHE_MAX_FILES=100
+CACHE_MAX_MEMORY_MB=256
+```
+
+| Setting | Description | Default |
+|---------|-------------|---------|
+| `CACHE_ENABLED` | Enable/disable cache | `true` |
+| `CACHE_MAX_FILES` | Max files in cache | `100` |
+| `CACHE_MAX_MEMORY_MB` | Max memory usage | `256` MB |
+### GRF Version Support
+
+| Version | Status | Notes |
+|---------|--------|-------|
+| 0x200 | ✅ Supported | 32-bit file offsets, no DES encryption |
+| 0x300 | ✅ Supported | 64-bit file offsets (files > 4GB), no DES encryption |
+| DES Encrypted | ❌ Not Supported | Repack with GRF Builder to remove encryption |
 
 ## Running the Remote Client
 

@@ -65,4 +65,33 @@
          * @see https://www.php.net/manual/en/ini.core.php#ini.memory-limit
 		 */
         'MEMORY_LIMIT'               =>     getenv('MEMORY_LIMIT') ? getenv('MEMORY_LIMIT'): '1000M',
+
+
+		/**
+		 * Enable LRU (Least Recently Used) cache for file contents.
+		 * This significantly improves performance by caching frequently accessed files in memory.
+		 *
+		 * When enabled, files extracted from GRFs are cached in memory, reducing disk I/O
+		 * and GRF parsing for repeated requests.
+		 */
+        'CACHE_ENABLED'               => getenv('CACHE_ENABLED') ? filter_var(getenv('CACHE_ENABLED'), FILTER_VALIDATE_BOOLEAN) : true,
+
+
+		/**
+		 * Maximum number of files to keep in cache.
+		 * When this limit is reached, the least recently used files are evicted.
+		 *
+		 * Recommended: 100-500 depending on your server's memory
+		 */
+        'CACHE_MAX_FILES'               => getenv('CACHE_MAX_FILES') ? (int)getenv('CACHE_MAX_FILES') : 100,
+
+
+		/**
+		 * Maximum memory usage for cache in megabytes.
+		 * When this limit is reached, the least recently used files are evicted.
+		 *
+		 * Recommended: 128-512 MB depending on your server's available memory
+		 * Note: This should be less than your PHP memory_limit
+		 */
+        'CACHE_MAX_MEMORY_MB'               => getenv('CACHE_MAX_MEMORY_MB') ? (int)getenv('CACHE_MAX_MEMORY_MB') : 256,
 	);
