@@ -68,6 +68,30 @@
 
 
 		/**
+		 * Gzip/Deflate Compression Settings
+		 * Compresses text-based responses to reduce bandwidth
+		 */
+
+		/**
+		 * Enable or disable response compression
+		 * When enabled, text-based files (xml, txt, lua, etc.) will be compressed
+		 */
+		'COMPRESSION_ENABLED'        => getenv('COMPRESSION_ENABLED') ? filter_var(getenv('COMPRESSION_ENABLED'), FILTER_VALIDATE_BOOLEAN) : true,
+
+		/**
+		 * Minimum file size in bytes to apply compression
+		 * Files smaller than this won't be compressed (overhead not worth it)
+		 * Default: 1024 (1KB)
+		 */
+		'COMPRESSION_MIN_SIZE'       => getenv('COMPRESSION_MIN_SIZE') ? (int)getenv('COMPRESSION_MIN_SIZE') : 1024,
+
+		/**
+		 * Compression level (1-9)
+		 * 1 = fastest, least compression
+		 * 9 = slowest, best compression
+		 * 6 = balanced (recommended)
+		 */
+		'COMPRESSION_LEVEL'          => getenv('COMPRESSION_LEVEL') ? (int)getenv('COMPRESSION_LEVEL') : 6,
 		 * Enable LRU (Least Recently Used) cache for file contents.
 		 * This significantly improves performance by caching frequently accessed files in memory.
 		 *
