@@ -2,10 +2,12 @@
 
 	// Include library
 	require_once('Debug.php');
+	require_once('LRUCache.php');
 	require_once('Grf.php');
 	require_once('Bmp.php');
 	require_once('Client.php');
 	require_once('Compression.php');
+	require_once('HttpCache.php');
 	$CONFIGS = require_once('configs.php');
 
     // Apply configs
@@ -26,9 +28,13 @@
 	Client::$AutoExtract =  (bool)$CONFIGS['CLIENT_AUTOEXTRACT'];
 
 
-	// Initialize client
+	// Initialize client with cache configuration
 	ini_set('memory_limit', $CONFIGS['MEMORY_LIMIT']);
-	Client::init($CONFIGS['CLIENT_ENABLESEARCH']);
+	Client::init($CONFIGS['CLIENT_ENABLESEARCH'], array(
+		'enabled' => $CONFIGS['CACHE_ENABLED'],
+		'maxFiles' => $CONFIGS['CACHE_MAX_FILES'],
+		'maxMemoryMB' => $CONFIGS['CACHE_MAX_MEMORY_MB'],
+	));
 
 
 	/**
@@ -80,6 +86,8 @@
 
 	// File not found, end.
 	if ($file === false) {
+		header('HTTP/1.1 404 Not Found', true, 404);
+		header('Cache-Control: no-store');
 		Debug::write('Failed, file not found...', 'error');
 		Debug::output();
 	}
@@ -88,22 +96,15 @@
 	}
 
 
-	header('Status: 200 OK', true, 200);
-	header("Cache-Control: max-age=2592000, public");
-	header("Expires: Sat, 31 Jan 2015 05:00:00 GMT");
+	// Process HTTP cache headers (ETag, Cache-Control, etc.)
+	// This will send 304 Not Modified if client has valid cached version
+	HttpCache::processCache($file, $path, $ext);
 
-	// Display appropriate header
-	switch ($ext) {
-		case 'jpg':
-		case 'jpeg': header('Content-type:image/jpeg');               break;
-		case 'bmp':  header('Content-type:image/bmp');                break;
-		case 'gif':  header('Content-type:image/gif');                break;
-		case 'xml':  header('Content-type:application/xml');          break;
-		case 'txt':  header('Content-type:text/plain');               break;
-		case 'lua':  header('Content-type:application/lua');          break;
-		case 'mp3':  header('Content-type:audio/mp3');                break;
-		default:     header('Content-type:application/octet-stream'); break;
-	}
+
+	header('Status: 200 OK', true, 200);
+
+	// Set content type
+	header('Content-type: ' . HttpCache::getContentType($ext));
 
 	// Output
 	if (Debug::isEnable()) {
