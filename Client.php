@@ -3,32 +3,36 @@
 /**
 * @fileoverview Client - File Manager
 * @author Vincent Thibault (alias KeyWorld - Twitter: @robrowser)
-* @version 1.6.0
+* @version 2.0.0
+* 
+* Changelog:
+*   v2.0.0 - Added LRU cache support for improved performance
+*   v1.5.1 - Previous version
 */
 
 
 final class Client
 {
 	/**
-	 * @var {string} client path
+	 * @var string client path
 	 */
 	static public $path = '';
 
 
 	/**
-	 * @var {string} data.ini file
+	 * @var string data.ini file
 	 */
 	static public $data_ini = '';
 
 
 	/**
-	 * @var {Array} grf list
+	 * @var array grf list
 	 */
 	static private $grfs = array();
 
 
 	/**
-	 * @var {boolean} auto extract mode
+	 * @var bool auto extract mode
 	 */
 	static public $AutoExtract = false;
 
@@ -50,10 +54,22 @@ final class Client
 
 
 	/**
-	 * Initialize client file
+	 * @var LRUCache File content cache
 	 */
-	static public function init($search_data_dir)
+	static private $cache = null;
+
+
+	/**
+	 * Initialize client file
+	 *
+	 * @param bool $search_data_dir Whether to index the data directory
+	 * @param array $cacheConfig Cache configuration (enabled, maxFiles, maxMemoryMB)
+	 */
+	static public function init($search_data_dir, $cacheConfig = array())
 	{
+		// Initialize LRU cache
+		self::initCache($cacheConfig);
+
         if($search_data_dir) {
             $iterator = new RecursiveIteratorIterator(new RecursiveDirectoryIterator(getcwd().'/data', FilesystemIterator::SKIP_DOTS));
             foreach ($iterator as $fi) {
@@ -189,9 +205,66 @@ final class Client
 	/**
 	 * Get a file from client, search it on data folder first and then on grf
 	 * Uses file index for O(1) GRF lookups
+		// Log cache status
+		if (self::$cache !== null && self::$cache->isEnabled()) {
+			Debug::write('LRU Cache: Enabled', 'success');
+		}
+	}
+
+
+	/**
+	 * Initialize LRU cache
 	 *
-	 * @param {string} file path
-	 * @return {boolean} success
+	 * @param array $config Cache configuration
+	 */
+	static private function initCache($config = array())
+	{
+		$enabled = isset($config['enabled']) ? $config['enabled'] : true;
+		$maxFiles = isset($config['maxFiles']) ? $config['maxFiles'] : 100;
+		$maxMemoryMB = isset($config['maxMemoryMB']) ? $config['maxMemoryMB'] : 256;
+
+		self::$cache = new LRUCache($maxFiles, $maxMemoryMB);
+		self::$cache->setEnabled($enabled);
+
+		if ($enabled) {
+			Debug::write("Cache initialized: max {$maxFiles} files, {$maxMemoryMB}MB memory", 'info');
+		} else {
+			Debug::write('Cache is disabled', 'info');
+		}
+	}
+
+
+	/**
+	 * Get cache instance
+	 *
+	 * @return LRUCache|null
+	 */
+	static public function getCache()
+	{
+		return self::$cache;
+	}
+
+
+	/**
+	 * Get cache statistics
+	 *
+	 * @return array|null
+	 */
+	static public function getCacheStats()
+	{
+		if (self::$cache === null) {
+			return null;
+		}
+		return self::$cache->getStats();
+	}
+
+
+
+	/**
+	 * Get a file from client, search it on cache, data folder, then on grf
+	 *
+	 * @param string $path File path
+	 * @return string|false File content or false if not found
 	 */
 	static public function getFile($path)
 	{
@@ -202,16 +275,32 @@ final class Client
 
 		Debug::write('Searching file ' . $path . '...', 'title');
 
-		// Read data first
+		// Check cache first (fastest path)
+		if (self::$cache !== null) {
+			$cached = self::$cache->get($path);
+			if ($cached !== null) {
+				Debug::write('File found in cache', 'success');
+				return $cached;
+			}
+		}
+
+		// Read from local data folder
 		if (file_exists($local_pathEncoded) && !is_dir($local_pathEncoded) && is_readable($local_pathEncoded)) {
 			Debug::write('File found at ' . $local_path, 'success');
 
-			// Store file
-			if(self::$AutoExtract) {
-				return self::store( $path, file_get_contents($local_pathEncoded) );
+			$content = file_get_contents($local_pathEncoded);
+
+			// Add to cache
+			if (self::$cache !== null && $content !== false) {
+				self::$cache->set($path, $content);
 			}
 
-			return file_get_contents($local_pathEncoded);
+			// Store file if auto-extract is enabled
+			if(self::$AutoExtract) {
+				return self::store( $path, $content );
+			}
+
+			return $content;
 		}
 		else {
 			Debug::write('File not found at ' . $local_path);
@@ -246,6 +335,7 @@ final class Client
 		Debug::write('File not found in index, falling back to sequential search');
 
 		// Fallback: Sequential search (for files not in index or edge cases)
+		// Search in GRFs
 		foreach (self::$grfs as $grf) {
 
 			// Load GRF just if needed
@@ -256,6 +346,11 @@ final class Client
 
 			// If file is found
 			if ($grf->getFile($grf_path, $content)) {
+				// Add to cache
+				if (self::$cache !== null) {
+					self::$cache->set($path, $content);
+				}
+
 				if (self::$AutoExtract) {
 					return self::store( $path, $content );
 				}

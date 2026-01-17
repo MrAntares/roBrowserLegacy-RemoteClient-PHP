@@ -283,17 +283,6 @@ class Grf
 
 
 	/**
-	 * Get the file entry size based on GRF version
-	 *
-	 * @return int Size of file entry in bytes (17 for 0x200, 21 for 0x300)
-	 */
-	private function getFileEntrySize()
-	{
-		return $this->uses64BitOffsets ? 21 : 17;
-	}
-
-
-	/**
 	 * Search for files matching a regex pattern
 	 *
 	 * @param string $regex Regular expression pattern
@@ -420,7 +409,7 @@ class Grf
 			'version' => $this->getVersionHex(),
 			'uses64BitOffsets' => $this->uses64BitOffsets,
 			'loaded' => $this->loaded,
-			'fileCount' => $this->loaded ? $this->getFileCount() : 0,
+			'fileCount' => isset($this->header['filecount']) ? $this->header['filecount'] : 0,
 			'tableSize' => $this->fileTable ? strlen($this->fileTable) : 0,
 		);
 	}
