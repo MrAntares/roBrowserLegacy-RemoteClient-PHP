@@ -8,6 +8,7 @@ Because pushing directly the fullclient on a server/ftp can provoke some errors,
  - Extracting files directly from GRF archive (versions 0x200 and 0x300 supported - without DES encryption).
  - Converting BMP files to PNG to speed up the transfer.
  - Optimized to don't call any script if files are already extracted/converted (resource friendly).
+ - **File Index for O(1) lookups**: Files are indexed at startup for instant lookups instead of sequential search through GRFs.
  - **Gzip/Deflate Compression**: Automatically compresses text-based responses (XML, TXT, LUA, etc.) to reduce bandwidth.
  - **HTTP Cache Headers** (ETag, Cache-Control, 304 Not Modified) for browser caching.
  - **LRU Cache** for fast repeated file access (in-memory caching).

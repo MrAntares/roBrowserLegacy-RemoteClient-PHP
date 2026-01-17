@@ -41,6 +41,17 @@ final class Client
      */
     static public $FileList = [];
 
+	/**
+	 * @var array File index for O(1) lookups
+	 * Maps normalized path => ['grfIndex' => int, 'originalPath' => string]
+	 */
+	static private $fileIndex = [];
+
+	/**
+	 * @var bool Whether the file index has been built
+	 */
+	static private $indexBuilt = false;
+
 
 	/**
 	 * @var LRUCache File content cache
@@ -111,6 +122,89 @@ final class Client
 			self::$grfs[$index]->filename = $grf_filename;
 		}
 
+		// Build file index for O(1) lookups
+		self::buildFileIndex();
+	}
+
+
+	/**
+	 * Build file index from all GRFs for O(1) lookups
+	 * Files are indexed by normalized path (lowercase, forward slashes)
+	 * Later GRFs override earlier ones (same as original behavior)
+	 */
+	static private function buildFileIndex()
+	{
+		if (self::$indexBuilt) {
+			return;
+		}
+
+		$startTime = microtime(true);
+		$totalFiles = 0;
+
+		foreach (self::$grfs as $grfIndex => $grf) {
+			// Load GRF if not loaded
+			if (!$grf->loaded) {
+				Debug::write('Loading GRF for indexing: ' . $grf->filename, 'info');
+				$grf->load();
+			}
+
+			if (!$grf->loaded) {
+				continue;
+			}
+
+			// Get file list from GRF
+			$files = $grf->getFileList();
+			
+			foreach ($files as $filePath) {
+				// Normalize path: lowercase, forward slashes
+				$normalizedPath = strtolower(str_replace('\\', '/', $filePath));
+				
+				// Later GRFs override earlier ones (higher priority)
+				self::$fileIndex[$normalizedPath] = [
+					'grfIndex' => $grfIndex,
+					'originalPath' => $filePath
+				];
+				$totalFiles++;
+			}
+		}
+
+		self::$indexBuilt = true;
+		$elapsed = round((microtime(true) - $startTime) * 1000, 2);
+		
+		Debug::write("File index built: " . count(self::$fileIndex) . " unique files from {$totalFiles} total entries in {$elapsed}ms", 'success');
+	}
+
+
+	/**
+	 * Get file index statistics
+	 * 
+	 * @return array Statistics about the file index
+	 */
+	static public function getIndexStats()
+	{
+		$stats = [
+			'indexBuilt' => self::$indexBuilt,
+			'uniqueFiles' => count(self::$fileIndex),
+			'grfCount' => count(self::$grfs),
+			'grfs' => []
+		];
+
+		foreach (self::$grfs as $index => $grf) {
+			$stats['grfs'][$index] = [
+				'filename' => $grf->filename,
+				'loaded' => $grf->loaded,
+				'fileCount' => $grf->loaded ? count($grf->getFileList()) : 0
+			];
+		}
+
+		return $stats;
+	}
+
+
+
+	/**
+	 * Get a file from client, search it on data folder first and then on grf
+	 * Uses file index for O(1) GRF lookups
 		// Log cache status
 		if (self::$cache !== null && self::$cache->isEnabled()) {
 			Debug::write('LRU Cache: Enabled', 'success');
@@ -212,6 +306,35 @@ final class Client
 			Debug::write('File not found at ' . $local_path);
 		}
 
+		// Use file index for O(1) lookup
+		$normalizedPath = strtolower(str_replace('\\', '/', $path));
+		
+		if (isset(self::$fileIndex[$normalizedPath])) {
+			$indexEntry = self::$fileIndex[$normalizedPath];
+			$grfIndex = $indexEntry['grfIndex'];
+			$originalPath = $indexEntry['originalPath'];
+			$grf = self::$grfs[$grfIndex];
+
+			Debug::write("File found in index: GRF #{$grfIndex} ({$grf->filename})", 'info');
+
+			// Ensure GRF is loaded
+			if (!$grf->loaded) {
+				Debug::write('Loading GRF: ' . $grf->filename, 'info');
+				$grf->load();
+			}
+
+			// Get file using original path (preserves case)
+			if ($grf->getFile($originalPath, $content)) {
+				if (self::$AutoExtract) {
+					return self::store($path, $content);
+				}
+				return $content;
+			}
+		}
+
+		Debug::write('File not found in index, falling back to sequential search');
+
+		// Fallback: Sequential search (for files not in index or edge cases)
 		// Search in GRFs
 		foreach (self::$grfs as $grf) {
 

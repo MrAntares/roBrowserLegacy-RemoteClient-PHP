@@ -3,9 +3,10 @@
 /**
 * @fileoverview Grf - Load and Parse .grf file (versions 0x200 and 0x300 without DES encryption).
 * @author Vincent Thibault (alias KeyWorld - Twitter: @robrowser)
-* @version 2.0.0
+* @version 2.1.0
 * 
 * Changelog:
+*   v2.1.0 - Added getFileList() and getFileCount() for file indexing
 *   v2.0.0 - Added support for GRF version 0x300 (64-bit file offsets)
 *   v1.0.0 - Initial version with 0x200 support
 */
@@ -56,6 +57,12 @@ class Grf
 
 
 	/**
+	 * @var array cached file list for performance
+	 */
+	private $cachedFileList = null;
+
+
+	/**
 	 * Header size in bytes
 	 */
 	const HEADER_SIZE = 46;
@@ -70,7 +77,7 @@ class Grf
 	/**
 	 * Constructor, open the filename if specify
 	 *
-	 * @param {string} optional filename
+	 * @param string $filename optional filename
 	 */
 	public function __construct( $filename = false )
 	{
@@ -94,7 +101,7 @@ class Grf
 	/**
 	 * Open a file
 	 *
-	 * @param {string} file path
+	 * @param string $filename file path
 	 */
 	public function open( $filename )
 	{
@@ -109,7 +116,7 @@ class Grf
 		}
 
 		// Open it
-		$this->fp   = fopen( $filename, 'r' );
+		$this->fp = fopen( $filename, 'r' );
 	}
 
 
@@ -161,7 +168,7 @@ class Grf
 
 		// Load table list
 		fseek( $this->fp, $this->header['table_offset'], SEEK_CUR);
-		$fileTableInfo   = unpack("Lpack_size/Lreal_size", fread($this->fp, 0x08));
+		$fileTableInfo = unpack("Lpack_size/Lreal_size", fread($this->fp, 0x08));
 		$this->fileTable = @gzuncompress( fread( $this->fp, $fileTableInfo['pack_size'] ), $fileTableInfo['real_size'] );
 
 		// Extraction error
@@ -292,6 +299,68 @@ class Grf
 		}
 
 		return $list;
+	}
+
+
+	/**
+	 * Get list of all files in the GRF
+	 * Parses the fileTable to extract all file paths
+	 * Results are cached for performance
+	 *
+	 * @return array List of file paths
+	 */
+	public function getFileList()
+	{
+		if (!$this->loaded) {
+			return [];
+		}
+
+		// Return cached list if available
+		if ($this->cachedFileList !== null) {
+			return $this->cachedFileList;
+		}
+
+		$files = [];
+		$offset = 0;
+		$tableLength = strlen($this->fileTable);
+		$entrySize = $this->getFileEntrySize();
+
+		while ($offset < $tableLength) {
+			// Find null terminator for filename
+			$nullPos = strpos($this->fileTable, "\0", $offset);
+			
+			if ($nullPos === false) {
+				break;
+			}
+
+			// Extract filename
+			$filename = substr($this->fileTable, $offset, $nullPos - $offset);
+			
+			if (strlen($filename) > 0) {
+				$files[] = $filename;
+			}
+
+			// Move past filename + null + file entry size
+			// 0x200: 17 bytes (pack_size(4) + length_aligned(4) + real_size(4) + flags(1) + position(4))
+			// 0x300: 21 bytes (pack_size(4) + length_aligned(4) + real_size(4) + flags(1) + position(8))
+			$offset = $nullPos + 1 + $entrySize;
+		}
+
+		// Cache the result
+		$this->cachedFileList = $files;
+
+		return $files;
+	}
+
+
+	/**
+	 * Get file count
+	 *
+	 * @return int Number of files in the GRF
+	 */
+	public function getFileCount()
+	{
+		return count($this->getFileList());
 	}
 
 
