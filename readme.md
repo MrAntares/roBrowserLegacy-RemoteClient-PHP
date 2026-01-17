@@ -8,6 +8,7 @@ Because pushing directly the fullclient on a server/ftp can provoke some errors,
  - Extracting files directly from GRF archive (only version 0x200 supported for now - without DES encryption).
  - Converting BMP files to PNG to speed up the transfer.
  - Optimized to don't call any script if files are already extracted/converted (resource friendly).
+ - **Gzip/Deflate Compression**: Automatically compresses text-based responses (XML, TXT, LUA, etc.) to reduce bandwidth.
 
 ###Add your fullclient###
 

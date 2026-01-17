@@ -5,12 +5,20 @@
 	require_once('Grf.php');
 	require_once('Bmp.php');
 	require_once('Client.php');
+	require_once('Compression.php');
 	$CONFIGS = require_once('configs.php');
 
     // Apply configs
 	if ($CONFIGS['DEBUG']) {
 		Debug::enable();
 	}
+
+	// Configure compression
+	Compression::configure(
+		$CONFIGS['COMPRESSION_ENABLED'],
+		$CONFIGS['COMPRESSION_MIN_SIZE'],
+		$CONFIGS['COMPRESSION_LEVEL']
+	);
 
 
 	Client::$path        =  '';
@@ -102,9 +110,10 @@
 		Debug::output();
 	}
 
-	// GZIP some files
-	if (in_array($ext, array('txt', 'xml', 'lua', 'lub', 'rsw', 'rsm', 'gnd', 'gat', 'spr', 'act', 'pal'))) {
-		ob_start("ob_gzhandler");
-	}
+	// Apply compression if appropriate (checks client support, file size, extension)
+	$output = Compression::compress($file, $ext);
 
-	echo $file;
+	// Set Content-Length header (important for compressed responses)
+	header('Content-Length: ' . strlen($output));
+
+	echo $output;
