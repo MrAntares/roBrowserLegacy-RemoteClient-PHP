@@ -2,6 +2,7 @@
 
 	// Include library
 	require_once('Debug.php');
+	require_once('LRUCache.php');
 	require_once('Grf.php');
 	require_once('Bmp.php');
 	require_once('Client.php');
@@ -18,9 +19,13 @@
 	Client::$AutoExtract =  (bool)$CONFIGS['CLIENT_AUTOEXTRACT'];
 
 
-	// Initialize client
+	// Initialize client with cache configuration
 	ini_set('memory_limit', $CONFIGS['MEMORY_LIMIT']);
-	Client::init($CONFIGS['CLIENT_ENABLESEARCH']);
+	Client::init($CONFIGS['CLIENT_ENABLESEARCH'], array(
+		'enabled' => $CONFIGS['CACHE_ENABLED'],
+		'maxFiles' => $CONFIGS['CACHE_MAX_FILES'],
+		'maxMemoryMB' => $CONFIGS['CACHE_MAX_MEMORY_MB'],
+	));
 
 
 	/**

@@ -8,6 +8,7 @@ Because pushing directly the fullclient on a server/ftp can provoke some errors,
  - Extracting files directly from GRF archive (only version 0x200 supported for now - without DES encryption).
  - Converting BMP files to PNG to speed up the transfer.
  - Optimized to don't call any script if files are already extracted/converted (resource friendly).
+ - **LRU Cache** for fast repeated file access (in-memory caching).
 
 ###Add your fullclient###
 
@@ -15,6 +16,29 @@ Just put your GRFs files and DATA.INI file in the `resources/` directory.
 Overwrite the `BGM/`, `data/` and `System/` directories with your own folders.
 
 **Note: to be sure to use a compatible version of your GRFs, download *GRF Builder* and repack them manually (Option > Repack type > Decrypt -> Repack), it will ensure the GRFs files are converted in the proper version**
+
+## Performance Features
+
+### LRU File Cache
+
+The server implements an in-memory LRU (Least Recently Used) cache for file content:
+
+- **Default**: 100 files, 256MB max memory
+- **O(1)** get/set operations
+- Automatic eviction of least recently used files
+- Configurable via environment variables
+
+```env
+CACHE_ENABLED=true
+CACHE_MAX_FILES=100
+CACHE_MAX_MEMORY_MB=256
+```
+
+| Setting | Description | Default |
+|---------|-------------|---------|
+| `CACHE_ENABLED` | Enable/disable cache | `true` |
+| `CACHE_MAX_FILES` | Max files in cache | `100` |
+| `CACHE_MAX_MEMORY_MB` | Max memory usage | `256` MB |
 
 ## Running the Remote Client
 
