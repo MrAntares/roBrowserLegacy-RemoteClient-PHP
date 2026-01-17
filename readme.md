@@ -5,7 +5,7 @@ The remote client exist to help users without a FullClient on their computer to 
 Because pushing directly the fullclient on a server/ftp can provoke some errors, this tool allow to :
 
  - Get the files from a client used in another domain (Cross-origin resource sharing).
- - Extracting files directly from GRF archive (only version 0x200 supported for now - without DES encryption).
+ - Extracting files directly from GRF archive (versions 0x200 and 0x300 supported - without DES encryption).
  - Converting BMP files to PNG to speed up the transfer.
  - Optimized to don't call any script if files are already extracted/converted (resource friendly).
 
@@ -15,6 +15,14 @@ Just put your GRFs files and DATA.INI file in the `resources/` directory.
 Overwrite the `BGM/`, `data/` and `System/` directories with your own folders.
 
 **Note: to be sure to use a compatible version of your GRFs, download *GRF Builder* and repack them manually (Option > Repack type > Decrypt -> Repack), it will ensure the GRFs files are converted in the proper version**
+
+### GRF Version Support
+
+| Version | Status | Notes |
+|---------|--------|-------|
+| 0x200 | ✅ Supported | 32-bit file offsets, no DES encryption |
+| 0x300 | ✅ Supported | 64-bit file offsets (files > 4GB), no DES encryption |
+| DES Encrypted | ❌ Not Supported | Repack with GRF Builder to remove encryption |
 
 ## Running the Remote Client
 
