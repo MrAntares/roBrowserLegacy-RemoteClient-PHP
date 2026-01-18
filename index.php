@@ -9,6 +9,7 @@
 	require_once('Compression.php');
 	require_once('HttpCache.php');
 	require_once('MissingFilesLog.php');
+	require_once('HealthCheck.php');
 	$CONFIGS = require_once('configs.php');
 
     // Apply configs
@@ -59,6 +60,18 @@
 
 	// Clear missing files log endpoint: /api/missing-files/clear (POST only)
 	if (preg_match('#/api/missing-files/clear/?$#i', $requestPath) && $_SERVER['REQUEST_METHOD'] === 'POST') {
+	// Health check endpoint: /api/health
+	if (preg_match('#/api/health/?$#i', $requestPath)) {
+		HealthCheck::outputJson(false);
+	}
+
+	// Simple health check endpoint: /api/health/simple
+	if (preg_match('#/api/health/simple/?$#i', $requestPath)) {
+		HealthCheck::outputJson(true);
+	}
+
+	// Cache stats endpoint: /api/cache-stats
+	if (preg_match('#/api/cache-stats/?$#i', $requestPath)) {
 		header('Content-Type: application/json');
 		header('Cache-Control: no-cache, no-store, must-revalidate');
 		header('Access-Control-Allow-Origin: *');
@@ -68,6 +81,12 @@
 			'success' => $success,
 			'message' => $success ? 'Log cleared successfully' : 'Failed to clear log'
 		], JSON_PRETTY_PRINT);
+		$stats = [
+			'cache' => Client::getCacheStats(),
+			'index' => Client::getIndexStats(),
+		];
+		
+		echo json_encode($stats, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES);
 		exit;
 	}
 
