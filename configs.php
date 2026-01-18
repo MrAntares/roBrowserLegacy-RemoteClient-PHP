@@ -92,6 +92,8 @@
 		 * 6 = balanced (recommended)
 		 */
 		'COMPRESSION_LEVEL'          => getenv('COMPRESSION_LEVEL') ? (int)getenv('COMPRESSION_LEVEL') : 6,
+
+		/**
 		 * Enable LRU (Least Recently Used) cache for file contents.
 		 * This significantly improves performance by caching frequently accessed files in memory.
 		 *
@@ -142,4 +144,28 @@
 		 * Default: 1000
 		 */
 		'MISSING_LOG_MAX_ENTRIES'    => getenv('MISSING_LOG_MAX_ENTRIES') ? (int)getenv('MISSING_LOG_MAX_ENTRIES') : 1000,
+
+
+		/**
+		 * Warm Cache Settings
+		 * Pre-load frequently accessed files into cache at startup
+		 */
+
+		/**
+		 * Enable warm cache on startup
+		 * When enabled, commonly accessed files are pre-loaded into cache
+		 */
+		'WARM_CACHE_ENABLED'         => getenv('WARM_CACHE_ENABLED') ? filter_var(getenv('WARM_CACHE_ENABLED'), FILTER_VALIDATE_BOOLEAN) : true,
+
+		/**
+		 * Maximum number of files to warm
+		 * Default: 50
+		 */
+		'WARM_CACHE_MAX_FILES'       => getenv('WARM_CACHE_MAX_FILES') ? (int)getenv('WARM_CACHE_MAX_FILES') : 50,
+
+		/**
+		 * Maximum memory to use for warming in megabytes
+		 * Default: 50 MB
+		 */
+		'WARM_CACHE_MAX_MEMORY_MB'   => getenv('WARM_CACHE_MAX_MEMORY_MB') ? (int)getenv('WARM_CACHE_MAX_MEMORY_MB') : 50,
 	);

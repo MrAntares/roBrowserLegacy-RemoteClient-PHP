@@ -14,6 +14,7 @@ Because pushing directly the fullclient on a server/ftp can provoke some errors,
  - **LRU Cache** for fast repeated file access (in-memory caching).
  - **Missing Files Log** for tracking and debugging missing game assets.
  - **Health Check API** (`/api/health`) for monitoring and diagnostics.
+ - **Warm Cache** for pre-loading frequently accessed files at startup.
 
 ###Add your fullclient###
 
@@ -86,6 +87,42 @@ MISSING_LOG_MAX_ENTRIES=1000
 | `/api/missing-files` | GET | Get log summary and recent entries |
 | `/api/missing-files/clear` | POST | Clear the log file |
 
+### Warm Cache
+
+The server can pre-load frequently accessed files into the LRU cache at startup or on-demand:
+
+- **Essential files** pre-loaded for faster initial requests
+- **Pattern matching** with wildcards for file groups
+- **Memory limit aware** - stops warming when limits reached
+- **Statistics tracking** for monitoring
+- **API endpoint** for on-demand warming
+- Configurable via environment variables
+
+```env
+WARM_CACHE_ENABLED=true
+WARM_CACHE_MAX_FILES=50
+WARM_CACHE_MAX_MEMORY_MB=50
+```
+
+| Setting | Description | Default |
+|---------|-------------|---------|
+| `WARM_CACHE_ENABLED` | Enable/disable warm cache | `true` |
+| `WARM_CACHE_MAX_FILES` | Max files to warm | `50` |
+| `WARM_CACHE_MAX_MEMORY_MB` | Max memory for warming | `50` MB |
+
+**Essential files warmed by default:**
+- `data\clientinfo.xml` - Client configuration
+- `data\lua files\*.lub` - Lua scripts
+- `data\sprite\*.spr` - Character sprites (basic)
+- `data\texture\*.bmp` - UI textures
+
+**API Endpoints:**
+
+| Endpoint | Method | Description |
+|----------|--------|-------------|
+| `/api/warm-cache` | GET | Get warm cache status and stats |
+| `/api/warm-cache/run` | POST | Trigger cache warming manually |
+
 ### GRF Version Support
 
 | Version | Status | Notes |
@@ -100,11 +137,15 @@ The remote client provides several API endpoints for monitoring and diagnostics:
 
 ### Health Check
 
-| Endpoint | Description |
-|----------|-------------|
-| `GET /api/health` | Complete system health status |
-| `GET /api/health/simple` | Simple status check (fast) |
-| `GET /api/cache-stats` | Cache and index statistics |
+| Endpoint | Method | Description |
+|----------|--------|-------------|
+| `GET /api/health` | GET | Complete system health status |
+| `GET /api/health/simple` | GET | Simple status check (fast) |
+| `GET /api/cache-stats` | GET | Cache and index statistics |
+| `GET /api/missing-files` | GET | Missing files log summary |
+| `POST /api/missing-files/clear` | POST | Clear missing files log |
+| `GET /api/warm-cache` | GET | Warm cache status and stats |
+| `POST /api/warm-cache/run` | POST | Trigger cache warming |
 
 **Example response for `/api/health`:**
 
