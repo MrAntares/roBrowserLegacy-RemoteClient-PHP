@@ -118,4 +118,22 @@
 		 * Note: This should be less than your PHP memory_limit
 		 */
         'CACHE_MAX_MEMORY_MB'               => getenv('CACHE_MAX_MEMORY_MB') ? (int)getenv('CACHE_MAX_MEMORY_MB') : 256,
+
+
+		/**
+		 * Korean Path Mapping Settings
+		 * Handles Korean filename encoding conversion (CP949/EUC-KR to UTF-8)
+		 */
+
+		/**
+		 * Enable path mapping for Korean filenames
+		 * When enabled, Korean UTF-8 paths will be resolved to their GRF equivalents
+		 */
+		'PATH_MAPPING_ENABLED'       => getenv('PATH_MAPPING_ENABLED') ? filter_var(getenv('PATH_MAPPING_ENABLED'), FILTER_VALIDATE_BOOLEAN) : true,
+
+		/**
+		 * Path to the mapping file (JSON format)
+		 * Default: path-mapping.json
+		 */
+		'PATH_MAPPING_FILE'          => getenv('PATH_MAPPING_FILE') ? getenv('PATH_MAPPING_FILE') : 'path-mapping.json',
 	);

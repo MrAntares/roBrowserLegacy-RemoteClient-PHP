@@ -9,6 +9,7 @@
 	require_once('Compression.php');
 	require_once('HttpCache.php');
 	require_once('HealthCheck.php');
+	require_once('PathMapping.php');
 	$CONFIGS = require_once('configs.php');
 
     // Apply configs
@@ -22,6 +23,12 @@
 		$CONFIGS['COMPRESSION_MIN_SIZE'],
 		$CONFIGS['COMPRESSION_LEVEL']
 	);
+
+	// Configure path mapping for Korean filenames
+	PathMapping::configure([
+		'enabled' => $CONFIGS['PATH_MAPPING_ENABLED'],
+		'mappingFile' => $CONFIGS['PATH_MAPPING_FILE'],
+	]);
 
 
 	Client::$path        =  '';
@@ -68,6 +75,11 @@
 		
 		echo json_encode($stats, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES);
 		exit;
+	}
+
+	// Path mapping stats endpoint: /api/path-mapping
+	if (preg_match('#/api/path-mapping/?$#i', $requestPath)) {
+		PathMapping::outputJson();
 	}
 
 

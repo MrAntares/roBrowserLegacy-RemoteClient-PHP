@@ -13,6 +13,7 @@ Because pushing directly the fullclient on a server/ftp can provoke some errors,
  - **HTTP Cache Headers** (ETag, Cache-Control, 304 Not Modified) for browser caching.
  - **LRU Cache** for fast repeated file access (in-memory caching).
  - **Health Check API** (`/api/health`) for monitoring and diagnostics.
+ - **Korean Path Mapping** for CP949/EUC-KR filename encoding support.
 
 ###Add your fullclient###
 
@@ -55,6 +56,42 @@ CACHE_MAX_MEMORY_MB=256
 | `CACHE_ENABLED` | Enable/disable cache | `true` |
 | `CACHE_MAX_FILES` | Max files in cache | `100` |
 | `CACHE_MAX_MEMORY_MB` | Max memory usage | `256` MB |
+
+### Korean Path Mapping
+
+Many Ragnarok GRF files contain Korean filenames encoded in CP949/EUC-KR. When these are read on non-Korean systems, they appear as mojibake (garbled characters).
+
+**The Problem:**
+```
+Client requests: /data/texture/유저인터페이스/t_배경3-3.tga
+GRF contains:    /data/texture/À¯ÀúÀÎÅÍÆäÀÌ½º/t_¹è°æ3-3.tga
+```
+
+**The Solution:**
+
+The server uses a `path-mapping.json` file to map Korean UTF-8 paths to their GRF equivalents:
+
+```env
+PATH_MAPPING_ENABLED=true
+PATH_MAPPING_FILE=path-mapping.json
+```
+
+| Setting | Description | Default |
+|---------|-------------|---------|
+| `PATH_MAPPING_ENABLED` | Enable/disable path mapping | `true` |
+| `PATH_MAPPING_FILE` | Path to mapping file | `path-mapping.json` |
+
+**Creating a path-mapping.json file:**
+
+```json
+{
+    "generatedAt": "2026-01-18T12:00:00Z",
+    "paths": {
+        "data/texture/유저인터페이스/file.tga": "data/texture/À¯ÀúÀÎÅÍÆäÀÌ½º/file.tga"
+    }
+}
+```
+
 ### GRF Version Support
 
 | Version | Status | Notes |
@@ -74,6 +111,7 @@ The remote client provides several API endpoints for monitoring and diagnostics:
 | `GET /api/health` | Complete system health status |
 | `GET /api/health/simple` | Simple status check (fast) |
 | `GET /api/cache-stats` | Cache and index statistics |
+| `GET /api/path-mapping` | Path mapping statistics |
 
 **Example response for `/api/health`:**
 

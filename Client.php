@@ -334,6 +334,59 @@ final class Client
 
 		Debug::write('File not found in index, falling back to sequential search');
 
+		// Try path mapping for Korean filenames
+		if (class_exists('PathMapping')) {
+			$mappedPath = PathMapping::resolve($path);
+			if ($mappedPath !== null) {
+				Debug::write("Path mapping found: {$path} -> {$mappedPath}", 'info');
+				
+				// Try to find the mapped path in the index
+				$normalizedMapped = strtolower(str_replace('\\', '/', $mappedPath));
+				
+				if (isset(self::$fileIndex[$normalizedMapped])) {
+					$indexEntry = self::$fileIndex[$normalizedMapped];
+					$grfIndex = $indexEntry['grfIndex'];
+					$originalPath = $indexEntry['originalPath'];
+					$grf = self::$grfs[$grfIndex];
+
+					if (!$grf->loaded) {
+						$grf->load();
+					}
+
+					if ($grf->getFile($originalPath, $content)) {
+						// Cache with original requested path
+						if (self::$cache !== null) {
+							self::$cache->set($path, $content);
+						}
+						
+						if (self::$AutoExtract) {
+							return self::store($path, $content);
+						}
+						return $content;
+					}
+				}
+
+				// Try direct GRF lookup with mapped path
+				$mappedGrfPath = str_replace('/', '\\', $mappedPath);
+				foreach (self::$grfs as $grf) {
+					if (!$grf->loaded) {
+						$grf->load();
+					}
+
+					if ($grf->getFile($mappedGrfPath, $content)) {
+						if (self::$cache !== null) {
+							self::$cache->set($path, $content);
+						}
+
+						if (self::$AutoExtract) {
+							return self::store($path, $content);
+						}
+						return $content;
+					}
+				}
+			}
+		}
+
 		// Fallback: Sequential search (for files not in index or edge cases)
 		// Search in GRFs
 		foreach (self::$grfs as $grf) {
