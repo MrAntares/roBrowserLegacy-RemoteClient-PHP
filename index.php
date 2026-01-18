@@ -10,6 +10,7 @@
 	require_once('HttpCache.php');
 	require_once('MissingFilesLog.php');
 	require_once('HealthCheck.php');
+	require_once('WarmCache.php');
 	$CONFIGS = require_once('configs.php');
 
     // Apply configs
@@ -45,6 +46,17 @@
 		'maxMemoryMB' => $CONFIGS['CACHE_MAX_MEMORY_MB'],
 	));
 
+	// Configure and run warm cache (pre-load frequently accessed files)
+	WarmCache::configure([
+		'enabled' => $CONFIGS['WARM_CACHE_ENABLED'],
+		'maxFiles' => $CONFIGS['WARM_CACHE_MAX_FILES'],
+		'maxMemoryMB' => $CONFIGS['WARM_CACHE_MAX_MEMORY_MB'],
+	]);
+	// Note: WarmCache::warm() can be called here for startup warming,
+	// but it's optional and may slow down initial page load.
+	// Uncomment the line below to enable startup warming:
+	// WarmCache::warm();
+
 
 	/**
 	 * API ENDPOINTS
@@ -60,6 +72,18 @@
 
 	// Clear missing files log endpoint: /api/missing-files/clear (POST only)
 	if (preg_match('#/api/missing-files/clear/?$#i', $requestPath) && $_SERVER['REQUEST_METHOD'] === 'POST') {
+		header('Content-Type: application/json');
+		header('Cache-Control: no-cache, no-store, must-revalidate');
+		header('Access-Control-Allow-Origin: *');
+		
+		$success = MissingFilesLog::clearLog();
+		echo json_encode([
+			'success' => $success,
+			'message' => $success ? 'Log cleared successfully' : 'Failed to clear log'
+		], JSON_PRETTY_PRINT);
+		exit;
+	}
+
 	// Health check endpoint: /api/health
 	if (preg_match('#/api/health/?$#i', $requestPath)) {
 		HealthCheck::outputJson(false);
@@ -76,17 +100,32 @@
 		header('Cache-Control: no-cache, no-store, must-revalidate');
 		header('Access-Control-Allow-Origin: *');
 		
-		$success = MissingFilesLog::clearLog();
-		echo json_encode([
-			'success' => $success,
-			'message' => $success ? 'Log cleared successfully' : 'Failed to clear log'
-		], JSON_PRETTY_PRINT);
 		$stats = [
 			'cache' => Client::getCacheStats(),
 			'index' => Client::getIndexStats(),
 		];
 		
 		echo json_encode($stats, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES);
+		exit;
+	}
+
+	// Warm cache endpoint: /api/warm-cache
+	if (preg_match('#/api/warm-cache/?$#i', $requestPath)) {
+		WarmCache::outputJson();
+	}
+
+	// Trigger warm cache endpoint: /api/warm-cache/run (POST only)
+	if (preg_match('#/api/warm-cache/run/?$#i', $requestPath) && $_SERVER['REQUEST_METHOD'] === 'POST') {
+		header('Content-Type: application/json');
+		header('Cache-Control: no-cache, no-store, must-revalidate');
+		header('Access-Control-Allow-Origin: *');
+		
+		$result = WarmCache::warm();
+		echo json_encode([
+			'success' => true,
+			'message' => 'Warm cache completed',
+			'stats' => $result
+		], JSON_PRETTY_PRINT);
 		exit;
 	}
 
