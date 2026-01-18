@@ -12,6 +12,7 @@ Because pushing directly the fullclient on a server/ftp can provoke some errors,
  - **Gzip/Deflate Compression**: Automatically compresses text-based responses (XML, TXT, LUA, etc.) to reduce bandwidth.
  - **HTTP Cache Headers** (ETag, Cache-Control, 304 Not Modified) for browser caching.
  - **LRU Cache** for fast repeated file access (in-memory caching).
+ - **Missing Files Log** for tracking and debugging missing game assets.
  - **Health Check API** (`/api/health`) for monitoring and diagnostics.
  - **Korean Path Mapping** for CP949/EUC-KR filename encoding support.
 
