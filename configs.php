@@ -118,4 +118,28 @@
 		 * Note: This should be less than your PHP memory_limit
 		 */
         'CACHE_MAX_MEMORY_MB'               => getenv('CACHE_MAX_MEMORY_MB') ? (int)getenv('CACHE_MAX_MEMORY_MB') : 256,
+
+
+		/**
+		 * Missing Files Log Settings
+		 * Log files that are requested but not found
+		 */
+
+		/**
+		 * Enable missing files logging
+		 * When enabled, files that are requested but not found will be logged
+		 */
+		'MISSING_LOG_ENABLED'        => getenv('MISSING_LOG_ENABLED') ? filter_var(getenv('MISSING_LOG_ENABLED'), FILTER_VALIDATE_BOOLEAN) : true,
+
+		/**
+		 * Path to the missing files log
+		 * Default: logs/missing-files.log
+		 */
+		'MISSING_LOG_FILE'           => getenv('MISSING_LOG_FILE') ? getenv('MISSING_LOG_FILE') : 'logs/missing-files.log',
+
+		/**
+		 * Maximum entries to keep in memory per request
+		 * Default: 1000
+		 */
+		'MISSING_LOG_MAX_ENTRIES'    => getenv('MISSING_LOG_MAX_ENTRIES') ? (int)getenv('MISSING_LOG_MAX_ENTRIES') : 1000,
 	);
