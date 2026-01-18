@@ -8,6 +8,7 @@
 	require_once('Client.php');
 	require_once('Compression.php');
 	require_once('HttpCache.php');
+	require_once('MissingFilesLog.php');
 	$CONFIGS = require_once('configs.php');
 
     // Apply configs
@@ -22,6 +23,13 @@
 		$CONFIGS['COMPRESSION_LEVEL']
 	);
 
+	// Configure missing files log
+	MissingFilesLog::configure([
+		'enabled' => $CONFIGS['MISSING_LOG_ENABLED'],
+		'logFile' => $CONFIGS['MISSING_LOG_FILE'],
+		'maxMemoryEntries' => $CONFIGS['MISSING_LOG_MAX_ENTRIES'],
+	]);
+
 
 	Client::$path        =  '';
 	Client::$data_ini    =  $CONFIGS['CLIENT_RESPATH'] . $CONFIGS['CLIENT_DATAINI'];
@@ -35,6 +43,33 @@
 		'maxFiles' => $CONFIGS['CACHE_MAX_FILES'],
 		'maxMemoryMB' => $CONFIGS['CACHE_MAX_MEMORY_MB'],
 	));
+
+
+	/**
+	 * API ENDPOINTS
+	 * Handle API requests before file serving
+	 */
+	$requestUri = isset($_SERVER['REQUEST_URI']) ? $_SERVER['REQUEST_URI'] : '';
+	$requestPath = parse_url($requestUri, PHP_URL_PATH);
+
+	// Missing files endpoint: /api/missing-files
+	if (preg_match('#/api/missing-files/?$#i', $requestPath)) {
+		MissingFilesLog::outputJson();
+	}
+
+	// Clear missing files log endpoint: /api/missing-files/clear (POST only)
+	if (preg_match('#/api/missing-files/clear/?$#i', $requestPath) && $_SERVER['REQUEST_METHOD'] === 'POST') {
+		header('Content-Type: application/json');
+		header('Cache-Control: no-cache, no-store, must-revalidate');
+		header('Access-Control-Allow-Origin: *');
+		
+		$success = MissingFilesLog::clearLog();
+		echo json_encode([
+			'success' => $success,
+			'message' => $success ? 'Log cleared successfully' : 'Failed to clear log'
+		], JSON_PRETTY_PRINT);
+		exit;
+	}
 
 
 	/**
@@ -86,6 +121,10 @@
 
 	// File not found, end.
 	if ($file === false) {
+		// Log missing file
+		$grf_path = str_replace('/', '\\', $path);
+		MissingFilesLog::log($path, $grf_path);
+
 		header('HTTP/1.1 404 Not Found', true, 404);
 		header('Cache-Control: no-store');
 		Debug::write('Failed, file not found...', 'error');

@@ -12,6 +12,7 @@ Because pushing directly the fullclient on a server/ftp can provoke some errors,
  - **Gzip/Deflate Compression**: Automatically compresses text-based responses (XML, TXT, LUA, etc.) to reduce bandwidth.
  - **HTTP Cache Headers** (ETag, Cache-Control, 304 Not Modified) for browser caching.
  - **LRU Cache** for fast repeated file access (in-memory caching).
+ - **Missing Files Log** for tracking and debugging missing game assets.
 
 ###Add your fullclient###
 
@@ -54,6 +55,36 @@ CACHE_MAX_MEMORY_MB=256
 | `CACHE_ENABLED` | Enable/disable cache | `true` |
 | `CACHE_MAX_FILES` | Max files in cache | `100` |
 | `CACHE_MAX_MEMORY_MB` | Max memory usage | `256` MB |
+
+### Missing Files Log
+
+The server logs all missing file requests to help identify missing game assets:
+
+- **Persistent logging** to `logs/missing-files.log`
+- **JSON format** for easy parsing and analysis
+- **Deduplication** within the same session
+- **API endpoint** for monitoring
+- Configurable via environment variables
+
+```env
+MISSING_LOG_ENABLED=true
+MISSING_LOG_FILE=logs/missing-files.log
+MISSING_LOG_MAX_ENTRIES=1000
+```
+
+| Setting | Description | Default |
+|---------|-------------|---------|
+| `MISSING_LOG_ENABLED` | Enable/disable logging | `true` |
+| `MISSING_LOG_FILE` | Path to log file | `logs/missing-files.log` |
+| `MISSING_LOG_MAX_ENTRIES` | Max entries in memory | `1000` |
+
+**API Endpoints:**
+
+| Endpoint | Method | Description |
+|----------|--------|-------------|
+| `/api/missing-files` | GET | Get log summary and recent entries |
+| `/api/missing-files/clear` | POST | Clear the log file |
+
 ### GRF Version Support
 
 | Version | Status | Notes |
