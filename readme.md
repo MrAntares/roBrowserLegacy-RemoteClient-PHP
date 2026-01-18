@@ -12,6 +12,7 @@ Because pushing directly the fullclient on a server/ftp can provoke some errors,
  - **Gzip/Deflate Compression**: Automatically compresses text-based responses (XML, TXT, LUA, etc.) to reduce bandwidth.
  - **HTTP Cache Headers** (ETag, Cache-Control, 304 Not Modified) for browser caching.
  - **LRU Cache** for fast repeated file access (in-memory caching).
+ - **Health Check API** (`/api/health`) for monitoring and diagnostics.
 
 ###Add your fullclient###
 
@@ -61,6 +62,40 @@ CACHE_MAX_MEMORY_MB=256
 | 0x200 | ✅ Supported | 32-bit file offsets, no DES encryption |
 | 0x300 | ✅ Supported | 64-bit file offsets (files > 4GB), no DES encryption |
 | DES Encrypted | ❌ Not Supported | Repack with GRF Builder to remove encryption |
+
+## API Endpoints
+
+The remote client provides several API endpoints for monitoring and diagnostics:
+
+### Health Check
+
+| Endpoint | Description |
+|----------|-------------|
+| `GET /api/health` | Complete system health status |
+| `GET /api/health/simple` | Simple status check (fast) |
+| `GET /api/cache-stats` | Cache and index statistics |
+
+**Example response for `/api/health`:**
+
+```json
+{
+    "status": "ok",
+    "timestamp": "2026-01-18T12:00:00+00:00",
+    "grfs": {
+        "total": 2,
+        "valid": 2
+    },
+    "cache": {
+        "enabled": true,
+        "items": 45,
+        "hitRate": "96.5%"
+    },
+    "index": {
+        "totalFiles": 450000
+    },
+    "hasWarnings": false
+}
+```
 
 ## Running the Remote Client
 
