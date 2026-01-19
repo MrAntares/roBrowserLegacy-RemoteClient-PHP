@@ -14,6 +14,7 @@ Because pushing directly the fullclient on a server/ftp can provoke some errors,
  - **LRU Cache** for fast repeated file access (in-memory caching).
  - **Missing Files Log** for tracking and debugging missing game assets.
  - **Health Check API** (`/api/health`) for monitoring and diagnostics.
+ - **Korean Path Mapping** for CP949/EUC-KR filename encoding support.
  - **Warm Cache** for pre-loading frequently accessed files at startup.
 
 ###Add your fullclient###
@@ -58,34 +59,40 @@ CACHE_MAX_MEMORY_MB=256
 | `CACHE_MAX_FILES` | Max files in cache | `100` |
 | `CACHE_MAX_MEMORY_MB` | Max memory usage | `256` MB |
 
-### Missing Files Log
+### Korean Path Mapping
 
-The server logs all missing file requests to help identify missing game assets:
+Many Ragnarok GRF files contain Korean filenames encoded in CP949/EUC-KR. When these are read on non-Korean systems, they appear as mojibake (garbled characters).
 
-- **Persistent logging** to `logs/missing-files.log`
-- **JSON format** for easy parsing and analysis
-- **Deduplication** within the same session
-- **API endpoint** for monitoring
-- Configurable via environment variables
+**The Problem:**
+```
+Client requests: /data/texture/유저인터페이스/t_배경3-3.tga
+GRF contains:    /data/texture/À¯ÀúÀÎÅÍÆäÀÌ½º/t_¹è°æ3-3.tga
+```
+
+**The Solution:**
+
+The server uses a `path-mapping.json` file to map Korean UTF-8 paths to their GRF equivalents:
 
 ```env
-MISSING_LOG_ENABLED=true
-MISSING_LOG_FILE=logs/missing-files.log
-MISSING_LOG_MAX_ENTRIES=1000
+PATH_MAPPING_ENABLED=true
+PATH_MAPPING_FILE=path-mapping.json
 ```
 
 | Setting | Description | Default |
 |---------|-------------|---------|
-| `MISSING_LOG_ENABLED` | Enable/disable logging | `true` |
-| `MISSING_LOG_FILE` | Path to log file | `logs/missing-files.log` |
-| `MISSING_LOG_MAX_ENTRIES` | Max entries in memory | `1000` |
+| `PATH_MAPPING_ENABLED` | Enable/disable path mapping | `true` |
+| `PATH_MAPPING_FILE` | Path to mapping file | `path-mapping.json` |
 
-**API Endpoints:**
+**Creating a path-mapping.json file:**
 
-| Endpoint | Method | Description |
-|----------|--------|-------------|
-| `/api/missing-files` | GET | Get log summary and recent entries |
-| `/api/missing-files/clear` | POST | Clear the log file |
+```json
+{
+    "generatedAt": "2026-01-18T12:00:00Z",
+    "paths": {
+        "data/texture/유저인터페이스/file.tga": "data/texture/À¯ÀúÀÎÅÍÆäÀÌ½º/file.tga"
+    }
+}
+```
 
 ### Warm Cache
 
@@ -146,6 +153,7 @@ The remote client provides several API endpoints for monitoring and diagnostics:
 | `POST /api/missing-files/clear` | POST | Clear missing files log |
 | `GET /api/warm-cache` | GET | Warm cache status and stats |
 | `POST /api/warm-cache/run` | POST | Trigger cache warming |
+| `GET /api/path-mapping` | Path mapping statistics |
 
 **Example response for `/api/health`:**
 
