@@ -162,4 +162,28 @@
          * Default: path-mapping.json
          */
         'PATH_MAPPING_FILE'          => getenv('PATH_MAPPING_FILE') ? getenv('PATH_MAPPING_FILE') : 'path-mapping.json',
+
+
+        /**
+         * Warm Cache Settings
+         * Pre-load frequently accessed files into cache at startup
+         */
+
+        /**
+         * Enable warm cache on startup
+         * When enabled, commonly accessed files are pre-loaded into cache
+         */
+        'WARM_CACHE_ENABLED'         => getenv('WARM_CACHE_ENABLED') ? filter_var(getenv('WARM_CACHE_ENABLED'), FILTER_VALIDATE_BOOLEAN) : true,
+
+        /**
+         * Maximum number of files to warm
+         * Default: 50
+         */
+        'WARM_CACHE_MAX_FILES'       => getenv('WARM_CACHE_MAX_FILES') ? (int)getenv('WARM_CACHE_MAX_FILES') : 50,
+
+        /**
+         * Maximum memory to use for warming in megabytes
+         * Default: 50 MB
+         */
+        'WARM_CACHE_MAX_MEMORY_MB'   => getenv('WARM_CACHE_MAX_MEMORY_MB') ? (int)getenv('WARM_CACHE_MAX_MEMORY_MB') : 50,
     );
