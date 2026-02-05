@@ -11,6 +11,7 @@ require_once('HttpCache.php');
 require_once('MissingFilesLog.php');
 require_once('HealthCheck.php');
 require_once('PathMapping.php');
+require_once('StartupValidator.php');
 $CONFIGS = require_once('configs.php');
 
 // Apply configs
@@ -107,6 +108,22 @@ if (preg_match('#/api/cache-stats/?$#i', $requestPath)) {
 // Path mapping stats endpoint: /api/path-mapping
 if (preg_match('#/api/path-mapping/?$#i', $requestPath)) {
     PathMapping::outputJson();
+}
+
+// Validation endpoint: /api/validate
+if (preg_match('#/api/validate/?$#i', $requestPath)) {
+    header('Content-Type: application/json');
+    header('Cache-Control: no-cache, no-store, must-revalidate');
+    header('Access-Control-Allow-Origin: *');
+    
+    $deepEncoding = isset($_GET['deep']) && $_GET['deep'] === 'true';
+    
+    $validator = new StartupValidator();
+    $results = $validator->validateAll(['deepEncoding' => $deepEncoding]);
+    
+    http_response_code($results['success'] ? 200 : 503);
+    echo json_encode($validator->getStatusJSON(), JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES);
+    exit;
 }
 
 
