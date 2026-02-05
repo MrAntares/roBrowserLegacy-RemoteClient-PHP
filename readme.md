@@ -16,13 +16,94 @@ Because pushing directly the fullclient on a server/ftp can provoke some errors,
  - **Health Check API** (`/api/health`) for monitoring and diagnostics.
  - **Korean Path Mapping** for CP949/EUC-KR filename encoding support.
  - **Warm Cache** for pre-loading frequently accessed files at startup.
+ - **Startup Validator** for system validation and diagnostics.
+ - **Doctor Command** (`php doctor.php`) for CLI-based diagnostics.
 
-###Add your fullclient###
+## Quick Start
+
+### 1. Add your fullclient
 
 Just put your GRFs files and DATA.INI file in the `resources/` directory.
 Overwrite the `BGM/`, `data/` and `System/` directories with your own folders.
 
 **Note: to be sure to use a compatible version of your GRFs, download *GRF Builder* and repack them manually (Option > Repack type > Repack), it will ensure the GRFs files are converted in the proper version**
+
+### 2. Run diagnostics
+
+```bash
+php doctor.php              # Basic validation
+php doctor.php --deep       # Deep validation with encoding analysis
+```
+
+### 3. Start the server
+
+Using Docker or your preferred web server (Apache, Nginx).
+
+---
+
+## Diagnostics & Validation
+
+### Doctor Command
+
+The `doctor.php` command provides comprehensive system validation:
+
+```bash
+# Basic validation
+php doctor.php
+
+# Deep validation (includes encoding analysis - slower but thorough)
+php doctor.php --deep
+
+# JSON output (for automation)
+php doctor.php --json
+
+# Show help
+php doctor.php --help
+```
+
+**What it validates:**
+- ✓ PHP version (minimum 7.4.0)
+- ✓ Required extensions (zlib, mbstring)
+- ✓ Optional extensions (gd, iconv)
+- ✓ Required files and directories
+- ✓ Configuration (DATA.INI, memory limit)
+- ✓ GRF file format (0x200 / 0x300)
+- ✓ GRF file table (zlib compressed)
+- ✓ Path encoding (UTF-8 vs legacy CP949/EUC-KR)
+- ✓ Mojibake detection (--deep mode)
+
+**Example output:**
+```
+╔════════════════════════════════════════════════════════════════════════════╗
+║            🏥 roBrowser Remote Client - Doctor (PHP)                       ║
+║                        System Diagnosis                                    ║
+╚════════════════════════════════════════════════════════════════════════════╝
+
+================================================================================
+📋 VALIDATION REPORT
+================================================================================
+
+✓ INFORMATION:
+   PHP version: 8.3.6
+   Extension 'zlib' loaded
+   Extension 'mbstring' loaded
+   DATA.INI found: resources/DATA.INI
+   Valid GRF: data.grf (version 0x200)
+   Memory limit: 1000M
+
+================================================================================
+✅ Validation completed successfully!
+================================================================================
+```
+
+### Validation API
+
+| Endpoint | Method | Description |
+|----------|--------|-------------|
+| `GET /api/validate` | GET | Run basic validation |
+| `GET /api/validate?deep=true` | GET | Run deep validation |
+
+---
 
 ## Performance Features
 
@@ -142,18 +223,20 @@ WARM_CACHE_MAX_MEMORY_MB=50
 
 The remote client provides several API endpoints for monitoring and diagnostics:
 
-### Health Check
+### Health Check & Validation
 
 | Endpoint | Method | Description |
 |----------|--------|-------------|
 | `GET /api/health` | GET | Complete system health status |
 | `GET /api/health/simple` | GET | Simple status check (fast) |
+| `GET /api/validate` | GET | Run startup validation |
+| `GET /api/validate?deep=true` | GET | Run deep validation with encoding |
 | `GET /api/cache-stats` | GET | Cache and index statistics |
 | `GET /api/missing-files` | GET | Missing files log summary |
 | `POST /api/missing-files/clear` | POST | Clear missing files log |
 | `GET /api/warm-cache` | GET | Warm cache status and stats |
 | `POST /api/warm-cache/run` | POST | Trigger cache warming |
-| `GET /api/path-mapping` | Path mapping statistics |
+| `GET /api/path-mapping` | GET | Path mapping statistics |
 
 **Example response for `/api/health`:**
 
