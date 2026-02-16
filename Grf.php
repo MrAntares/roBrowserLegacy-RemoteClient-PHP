@@ -82,7 +82,13 @@ class Grf
 	/**
 	 * Header size in bytes
 	 */
-	const HEADER_SIZE = 46;
+	const HEADER_SIZE = 0x2E;
+
+	/**
+	 * Header signatures
+	 */
+	const SIG_MAGIC = "Master of Magic\0";
+	const SIG_EH3 = "Event Horizon\0RL";
 
 	/**
 	 * Supported GRF versions
@@ -148,13 +154,13 @@ class Grf
 		}
 
 		// Parse header.
-		$this->header = unpack("a15signature/a15key/Ltable_offset/Lseeds/Lfilecount/Lversion", fread($this->fp, self::HEADER_SIZE) );
+		$this->header = unpack("a16signature/a14key/Ltable_offset/Lseeds/Lfilecount/Lversion", fread($this->fp, self::HEADER_SIZE) );
 		$this->version = $this->header['version'];
-
+		
 		// Validate signature
-		if ($this->header['signature'] !== 'Master of Magic') {
-			Debug::write('Invalid GRF signature in "'. $this->filename .'"', 'error');
-			return;
+		if (!($this->version === self::VERSION_300 && $this->header['signature'] === SIG_EH3) || $this->header['signature'] !== SIG_MAGIC) {
+		    Debug::write('Invalid GRF signature in "'. $this->filename .'"', 'error');
+		    return;
 		}
 
 		// Check version compatibility (0x200 or 0x300)
