@@ -4,6 +4,7 @@
 require_once('Debug.php');
 require_once('LRUCache.php');
 require_once('Grf.php');
+require_once('GrfDes.php');
 require_once('Bmp.php');
 require_once('Client.php');
 require_once('Compression.php');
