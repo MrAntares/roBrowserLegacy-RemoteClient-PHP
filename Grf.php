@@ -314,6 +314,9 @@ class Grf
 		$isEncrypted = ($flags !== self::FLAG_FILE);
 		$readSize = $isEncrypted ? $fileInfo['length_aligned'] : $fileInfo['pack_size'];
 
+		// Debugging
+		Debug::write("File: $filename, Flags: $flags, ReadSize: $readSize, PackSize: {$fileInfo['pack_size']}, Aligned: {$fileInfo['length_aligned']}", 'info');
+
 		$compressedData = fread($this->fp, $readSize);
 
 		if ($compressedData === false || strlen($compressedData) < $readSize) {
@@ -321,18 +324,45 @@ class Grf
 			return false;
 		}
 
-		if ($flags === self::FLAG_ENCRYPT_MIXED || $flags === self::FLAG_ENCRYPT_MIXED_ALT) {
-			// Mixed encryption: decrypt header blocks based on file size
-			$compressedData = $this->des->decryptMixed($compressedData, $fileInfo['length_aligned']);
-		} elseif ($flags === self::FLAG_ENCRYPT_HEADER) {
-			// Header encryption: decrypt first blocks
-			$compressedData = $this->des->decryptHeader($compressedData);
+		if ($isEncrypted) {
+			// Calculate cycle from pack_size
+			$cycle = 0;
+			$isDataCrypted = false; // type in C#
+
+			// Check extension
+			$ext = strtolower(substr($filename, strrpos($filename, '.') ?: 0));
+			$skipExtensions = ['.gnd', '.gat', '.act', '.str'];
+
+			if (in_array($ext, $skipExtensions)) {
+				$cycle = 0;
+				$isDataCrypted = true;
+			} else {
+				$cycle = 1;
+				for ($i = 10; $fileInfo['pack_size'] >= $i; $i *= 10) {
+					$cycle++;
+				}
+			}
+
+			if ($flags === self::FLAG_ENCRYPT_MIXED || $flags === self::FLAG_ENCRYPT_MIXED_ALT) {
+				// Mixed encryption: decrypt header blocks based on file size
+				$compressedData = $this->des->decryptMixed($compressedData, $cycle, $isDataCrypted);
+			} elseif ($flags === self::FLAG_ENCRYPT_HEADER) {
+				// Header encryption: decrypt first blocks
+				$compressedData = $this->des->decryptHeader($compressedData);
+			}
+
+			// Trim padding bytes added for DES alignment
+			$compressedData = substr($compressedData, 0, $fileInfo['pack_size']);
 		}
 
-		$content = @gzuncompress($compressedData, $fileInfo['real_size']);
+		// Debug first 16 bytes of data to check for 0x78 zlib header
+		$hex = bin2hex(substr($compressedData, 0, 16));
+		Debug::write("File: $filename, Zlib Check (hex): $hex", 'info');
+
+		$content = gzuncompress($compressedData, $fileInfo['real_size']);
 
 		if ($content === false) {
-			Debug::write('Failed to decompress file from GRF '. $this->filename, 'error');
+			Debug::write('Failed to decompress file from GRF '. $this->filename . " (Zlib error: " . error_get_last()['message'] . ")", 'error');
 			return false;
 		}
 

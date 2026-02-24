@@ -83,15 +83,16 @@ class GrfDES
 	 * @param int $length Aligned length from file entry
 	 * @return string Decrypted data
 	 */
-	public function decryptMixed(string $data, int $length): string
+	public function decryptMixed(string $data, int $cycle, bool $isDataCrypted = false): string
 	{
 		$dataLen = strlen($data);
-		$cycle = $length;
 
-		if ($cycle < 3) $cycle = 3;
-		elseif ($cycle < 5) $cycle++;
-		elseif ($cycle < 7) $cycle += 9;
-		else $cycle += 15;
+		if (!$isDataCrypted) {
+			if ($cycle < 3) $cycle = 3;
+			elseif ($cycle < 5) $cycle++;
+			elseif ($cycle < 7) $cycle += 9;
+			else $cycle += 15;
+		}
 
 		$cnt = 0;
 		$decryptBlocks = intval($dataLen / self::BLOCK_SIZE);
@@ -99,7 +100,8 @@ class GrfDES
 		for ($i = 0; $i < $decryptBlocks; $i++) {
 			$offset = $i * self::BLOCK_SIZE;
 
-			if ($i < 20 || ($i % $cycle == 0)) {
+			// Decrypt if block < 20 OR (not dataCrypted and part of cycle)
+			if ($i < 20 || (!$isDataCrypted && ($i % $cycle == 0))) {
 				// Decrypt block
 				$block = substr($data, $offset, self::BLOCK_SIZE);
 				$decrypted = $this->decryptBlock($block);
@@ -107,7 +109,8 @@ class GrfDES
 					$data[$offset + $j] = $decrypted[$j];
 				}
 			} else {
-				if ($cnt == 7) {
+				// Shuffle if cnt == 7 and not dataCrypted
+				if ($cnt == 7 && !$isDataCrypted) {
 					$cnt = 0;
 					$tmp = substr($data, $offset, self::BLOCK_SIZE);
 					$data[$offset] = $tmp[3];
