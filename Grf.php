@@ -201,6 +201,13 @@ class Grf
 
 		// set table offset, seeds, filecount and uses64BitOffsets based on majorVersion
 		if ($this->header['majorVersion'] == 3 && $this->header['minorVersion'] == 0) {
+
+			// check if php has support to 64-bit
+			if(PHP_INT_SIZE < 8) {
+				Debug::write('GRF "'. $this->filename .'" uses 64-bit offsets, but PHP_INT_SIZE is less than 8', 'error');
+				return;
+			}
+
 			$this->header['table_offset'] = unpack("Qtable_offset", substr($header_bytes, 30, 8))['table_offset'];
 			$this->header['seeds'] = 0;
 			$this->header['filecount'] = $this->header['realfilecount'] = unpack("Lfilecount", substr($header_bytes, 38, 4))['filecount'];
@@ -211,12 +218,6 @@ class Grf
 			$this->header['filecount'] = unpack("Lfilecount", substr($header_bytes, 38, 4))['filecount'];
 			$this->header['realfilecount'] = $this->header['filecount'] - $this->header['seeds'] - 7;
 			$this->uses64BitOffsets = false;
-		}
-
-		// check if php has support to 64-bit
-		if($this->uses64BitOffsets && PHP_INT_SIZE < 8) {
-			Debug::write('GRF "'. $this->filename .'" uses 64-bit offsets, but PHP_INT_SIZE is less than 8', 'error');
-			return;
 		}
 
 		// check table offset
