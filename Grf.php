@@ -349,6 +349,10 @@ class Grf
 			} elseif ($flags === self::FLAG_ENCRYPT_HEADER) {
 				// Header encryption: decrypt first blocks
 				$compressedData = $this->des->decryptHeader($compressedData);
+			} else {
+				// Unsupported encryption (e.g. GrfEditorCrypted 0x80)
+				Debug::write('Unsupported encryption flag ('. $flags .') for file '. $filename . '. This usually requires a custom decryption key.', 'error');
+				return false;
 			}
 
 			// Trim padding bytes added for DES alignment

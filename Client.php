@@ -272,6 +272,7 @@ final class Client
 		$local_path        .= str_replace('\\', '/', $path );
 		$local_pathEncoded  = mb_convert_encoding($local_path, 'UTF-8');
 		$grf_path           = str_replace('/', '\\', $path );
+		$content = null;
 
 		Debug::write('Searching file ' . $path . '...', 'title');
 
