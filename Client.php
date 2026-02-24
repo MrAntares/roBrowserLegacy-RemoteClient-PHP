@@ -1,14 +1,14 @@
 <?php
 
 /**
-* @fileoverview Client - File Manager
-* @author Vincent Thibault (alias KeyWorld - Twitter: @robrowser)
-* @version 2.0.0
-* 
-* Changelog:
-*   v2.0.0 - Added LRU cache support for improved performance
-*   v1.5.1 - Previous version
-*/
+ * @fileoverview Client - File Manager
+ * @author Vincent Thibault (alias KeyWorld - Twitter: @robrowser)
+ * @version 2.0.0
+ * 
+ * Changelog:
+ *   v2.0.0 - Added LRU cache support for improved performance
+ *   v1.5.1 - Previous version
+ */
 
 
 final class Client
@@ -36,10 +36,10 @@ final class Client
 	 */
 	static public $AutoExtract = false;
 
-    /**
-     * @var array Stores the file list on the data directory.
-     */
-    static public $FileList = [];
+	/**
+	 * @var array Stores the file list on the data directory.
+	 */
+	static public $FileList = [];
 
 	/**
 	 * @var array File index for O(1) lookups
@@ -93,14 +93,14 @@ final class Client
 			$grf->setEncoding($grfEncoding);
 		}
 
-		if($search_data_dir) {
+		if ($search_data_dir) {
 			$cacheFile = self::getIndexCachePath('filelist');
 			$cacheKey = self::getFileListCacheKey();
 
 			if (self::$indexCacheConfig['enabled'] && ($cached = self::loadIndexCache($cacheFile, $cacheKey))) {
 				self::$FileList = $cached;
 			} else {
-				$iterator = new RecursiveIteratorIterator(new RecursiveDirectoryIterator(getcwd().'/data', FilesystemIterator::SKIP_DOTS));
+				$iterator = new RecursiveIteratorIterator(new RecursiveDirectoryIterator(getcwd() . '/data', FilesystemIterator::SKIP_DOTS));
 				foreach ($iterator as $fi) {
 					self::$FileList[] = $fi->getPathname();
 				}
@@ -110,7 +110,7 @@ final class Client
 			}
 		}
 
-        if (empty(self::$data_ini)) {
+		if (empty(self::$data_ini)) {
 			Debug::write('No DATA.INI file defined in configs ?');
 			return;
 		}
@@ -122,14 +122,13 @@ final class Client
 			return;
 		}
 
-
 		if (!is_readable($path)) {
 			Debug::write('Can\'t read file: ' . $path, 'error');
 			return;
 		}
 
 		// Setup GRF context
-		$data_ini = parse_ini_file($path, true );
+		$data_ini = parse_ini_file($path, true);
 		$grfs     = array();
 		$info     = pathinfo($path);
 
@@ -141,7 +140,7 @@ final class Client
 			return;
 		}
 
-		$grfs = $data_ini[ $keys[$index] ];
+		$grfs = $data_ini[$keys[$index]];
 		ksort($grfs);
 
 		Debug::write('File ' . $path . ' loaded.', 'success');
@@ -156,8 +155,14 @@ final class Client
 			self::$grfs[$index]->setEncoding($grfEncoding);
 		}
 
+		if (self::$cache !== null && self::$cache->isEnabled()) {
+			Debug::write('LRU Cache: Enabled', 'success');
+		}
+
 		// Build file index for O(1) lookups
-		self::buildFileIndex();
+		if(isset($GLOBALS['CONFIGS']['INDEX_CACHE_ENABLED']) && $GLOBALS['CONFIGS']['INDEX_CACHE_ENABLED']) {
+			self::buildFileIndex();
+		}
 	}
 
 
@@ -198,11 +203,11 @@ final class Client
 
 			// Get file list from GRF
 			$files = $grf->getFileList();
-			
+
 			foreach ($files as $filePath) {
 				// Normalize path: lowercase, forward slashes
 				$normalizedPath = strtolower(str_replace('\\', '/', $filePath));
-				
+
 				// Later GRFs override earlier ones (higher priority)
 				self::$fileIndex[$normalizedPath] = [
 					'grfIndex' => $grfIndex,
@@ -214,7 +219,7 @@ final class Client
 
 		self::$indexBuilt = true;
 		$elapsed = round((microtime(true) - $startTime) * 1000, 2);
-		
+
 		Debug::write("File index built: " . count(self::$fileIndex) . " unique files from {$totalFiles} total entries in {$elapsed}ms", 'success');
 
 		if (self::$indexCacheConfig['enabled']) {
@@ -336,18 +341,6 @@ final class Client
 		return $stats;
 	}
 
-
-
-	/**
-	 * Get a file from client, search it on data folder first and then on grf
-	 * Uses file index for O(1) GRF lookups
-		// Log cache status
-		if (self::$cache !== null && self::$cache->isEnabled()) {
-			Debug::write('LRU Cache: Enabled', 'success');
-		}
-	}
-
-
 	/**
 	 * Initialize LRU cache
 	 *
@@ -405,9 +398,9 @@ final class Client
 	static public function getFile($path)
 	{
 		$local_path         = self::$path;
-		$local_path        .= str_replace('\\', '/', $path );
+		$local_path        .= str_replace('\\', '/', $path);
 		$local_pathEncoded  = mb_convert_encoding($local_path, 'UTF-8');
-		$grf_path           = str_replace('/', '\\', $path );
+		$grf_path           = str_replace('/', '\\', $path);
 		$content = null;
 
 		Debug::write('Searching file ' . $path . '...', 'title');
@@ -433,19 +426,18 @@ final class Client
 			}
 
 			// Store file if auto-extract is enabled
-			if(self::$AutoExtract) {
-				return self::store( $path, $content );
+			if (self::$AutoExtract) {
+				return self::store($path, $content);
 			}
 
 			return $content;
-		}
-		else {
+		} else {
 			Debug::write('File not found at ' . $local_path);
 		}
 
 		// Use file index for O(1) lookup
 		$normalizedPath = strtolower(str_replace('\\', '/', $path));
-		
+
 		if (isset(self::$fileIndex[$normalizedPath])) {
 			$indexEntry = self::$fileIndex[$normalizedPath];
 			$grfIndex = $indexEntry['grfIndex'];
@@ -476,10 +468,10 @@ final class Client
 			$mappedPath = PathMapping::resolve($path);
 			if ($mappedPath !== null) {
 				Debug::write("Path mapping found: {$path} -> {$mappedPath}", 'info');
-				
+
 				// Try to find the mapped path in the index
 				$normalizedMapped = strtolower(str_replace('\\', '/', $mappedPath));
-				
+
 				if (isset(self::$fileIndex[$normalizedMapped])) {
 					$indexEntry = self::$fileIndex[$normalizedMapped];
 					$grfIndex = $indexEntry['grfIndex'];
@@ -495,7 +487,7 @@ final class Client
 						if (self::$cache !== null) {
 							self::$cache->set($path, $content);
 						}
-						
+
 						if (self::$AutoExtract) {
 							return self::store($path, $content);
 						}
@@ -542,7 +534,7 @@ final class Client
 				}
 
 				if (self::$AutoExtract) {
-					return self::store( $path, $content );
+					return self::store($path, $content);
 				}
 
 				return $content;
@@ -561,15 +553,15 @@ final class Client
 	 * @param {string} file content
 	 * @return {string} content
 	 */
-	static public function store( $path, $content )
+	static public function store($path, $content)
 	{
-		$path         = utf8_encode($path);
+		$path         = mb_convert_encoding($path, 'UTF-8', 'ISO-8859-1');
 		$current_path = self::$path;
-		$local_path   = $current_path . str_replace('\\', '/', $path );
+		$local_path   = $current_path . str_replace('\\', '/', $path);
 		$parent_path  = preg_replace("/[^\/]+$/", '', $local_path);
 
 		if (!file_exists($parent_path)) {
-			if (!@mkdir( $parent_path, 0777, true)) {
+			if (!@mkdir($parent_path, 0777, true)) {
 				Debug::write("Can't build path '{$parent_path}', need write permission ?", 'error');
 				return $content;
 			}
@@ -581,29 +573,30 @@ final class Client
 		}
 
 		// storing bmp images as png
-		if (strtolower(pathinfo($path, PATHINFO_EXTENSION)) === 'bmp')  {
-			$img  = imagecreatefrombmpstring( $content );
+		if (strtolower(pathinfo($path, PATHINFO_EXTENSION)) === 'bmp') {
+			$img  = imagecreatefrombmpstring($content);
 			$path = str_ireplace('.bmp', '.png', $local_path);
-			imagepng($img, $path );
-			return file_get_contents( $path );
+			imagepng($img, $path);
+			return file_get_contents($path);
 		}
 
 		// Saving file
-		file_put_contents( $local_path, $content);
+		file_put_contents($local_path, $content);
 		return $content;
 	}
 
 
-    /**
-     * Search files in the GRF file and on the data directory.
-     *
-     * @param string $filter
-     * @return array file list
-     */
-	static public function search($filter) {
+	/**
+	 * Search files in the GRF file and on the data directory.
+	 *
+	 * @param string $filter
+	 * @return array file list
+	 */
+	static public function search($filter)
+	{
 		$out = array();
 
-        $grf_filter = mb_convert_encoding('/'. $filter. '/i', 'UTF-8');
+		$grf_filter = mb_convert_encoding('/' . $filter . '/i', 'UTF-8');
 		foreach (self::$grfs as $grf) {
 
 			if (!$grf->loaded) {
@@ -611,17 +604,17 @@ final class Client
 			}
 
 			$list = $grf->search($grf_filter);
-			$out  = array_unique( array_merge($out, $list) );
+			$out  = array_unique(array_merge($out, $list));
 		}
 
-        $matches = array_filter(self::$FileList, function($item) use ($filter) {
-            return stripos($item, $filter) !== false;
-        });
+		$matches = array_filter(self::$FileList, function ($item) use ($filter) {
+			return stripos($item, $filter) !== false;
+		});
 
-        $matches = array_map(function ($i){
-            return str_replace(getcwd(), '', $i);
-        },$matches);
+		$matches = array_map(function ($i) {
+			return str_replace(getcwd(), '', $i);
+		}, $matches);
 
-        return array_unique(array_merge($out, $matches));
+		return array_unique(array_merge($out, $matches));
 	}
 }
