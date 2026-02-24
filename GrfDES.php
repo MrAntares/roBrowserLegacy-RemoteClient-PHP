@@ -1,11 +1,17 @@
 
 <?php
+
 /**
- * GRF DES Decryption
- *
- * Implements the modified DES algorithm used by Ragnarok Online GRF files.
- * Based on the original roBrowser implementation.
+ * @fileoverview GRF DES Decryption
+ * @author roBrowser Legacy Team
+ * @version 1.0.0
+ * 
+ * Provides GRF DES Decryption including:
+ * - Decrypt with mixed encryption (based on cycle)
+ * - Decrypt header only (first block)
+ * - Decode file name (used for encrypted file table entries)
  */
+
 class GrfDES
 {
 	/**
