@@ -1,6 +1,4 @@
 <?php
-ob_start();
-
 
 // Include library
 require_once('Debug.php');
@@ -214,7 +212,4 @@ $output = Compression::compress($file, $ext);
 // Set Content-Length header (important for compressed responses)
 header('Content-Length: ' . strlen($output));
 
-if (ob_get_length()) {
-    ob_clean();
-}
 echo $output;
