@@ -54,7 +54,7 @@ Client::init($CONFIGS['CLIENT_ENABLESEARCH'], array(
     'enabled' => $CONFIGS['CACHE_ENABLED'],
     'maxFiles' => $CONFIGS['CACHE_MAX_FILES'],
     'maxMemoryMB' => $CONFIGS['CACHE_MAX_MEMORY_MB'],
-));
+), $CONFIGS['GRF_ENCODING']);
 
 
 /**

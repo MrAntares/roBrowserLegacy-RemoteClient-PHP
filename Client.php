@@ -64,11 +64,17 @@ final class Client
 	 *
 	 * @param bool $search_data_dir Whether to index the data directory
 	 * @param array $cacheConfig Cache configuration (enabled, maxFiles, maxMemoryMB)
+	 * @param string $grfEncoding Encoding for filenames in GRFs (e.g. 'CP949')
 	 */
-	static public function init($search_data_dir, $cacheConfig = array())
+	static public function init($search_data_dir, $cacheConfig = array(), $grfEncoding = 'CP949')
 	{
 		// Initialize LRU cache
 		self::initCache($cacheConfig);
+
+		// Set GRF encoding
+		foreach (self::$grfs as $grf) {
+			$grf->setEncoding($grfEncoding);
+		}
 
         if($search_data_dir) {
             $iterator = new RecursiveIteratorIterator(new RecursiveDirectoryIterator(getcwd().'/data', FilesystemIterator::SKIP_DOTS));
@@ -120,6 +126,7 @@ final class Client
 
 			self::$grfs[$index] = new Grf($info['dirname'] . '/' . $grf_filename);
 			self::$grfs[$index]->filename = $grf_filename;
+			self::$grfs[$index]->setEncoding($grfEncoding);
 		}
 
 		// Build file index for O(1) lookups
@@ -461,8 +468,8 @@ final class Client
     /**
      * Search files in the GRF file and on the data directory.
      *
-     * @param {string} regex
-     * @return array {Array} file list
+     * @param string $filter
+     * @return array file list
      */
 	static public function search($filter) {
 		$out = array();

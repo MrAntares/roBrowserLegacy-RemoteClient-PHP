@@ -85,6 +85,12 @@ class Grf
 
 
 	/**
+	 * @var string filename encoding (e.g. CP949, CP874)
+	 */
+	private $encoding = null;
+
+
+	/**
 	 * File entry flags
 	 */
 	const FLAG_FILE = 0x01;                // Compressed only
@@ -268,6 +274,48 @@ class Grf
 
 
 	/**
+	 * Set the encoding for filenames in this GRF
+	 *
+	 * @param string $encoding (e.g. 'CP949', 'CP874', 'ISO-8859-1')
+	 */
+	public function setEncoding( $encoding )
+	{
+		$this->encoding = $encoding;
+	}
+
+
+	/**
+	 * Helper to convert filename to internal GRF encoding
+	 *
+	 * @param string $filename
+	 * @return string
+	 */
+	private function encodeFilename( $filename )
+	{
+		// If input looks like mojibake (UTF-8 version of Latin-1 misread),
+		// we need to get the raw bytes by converting it back to Latin-1.
+		if (class_exists('PathMapping') && PathMapping::isMojibake($filename)) {
+			return mb_convert_encoding($filename, 'ISO-8859-1', 'UTF-8');
+		}
+
+		if ($this->encoding && extension_loaded('mbstring')) {
+			return mb_convert_encoding($filename, $this->encoding, 'UTF-8');
+		}
+
+		// Fallback: if filename is UTF-8 but looks like it should be legacy
+		// we can try to use PathMapping if available
+		if (class_exists('PathMapping') && PathMapping::containsKorean($filename)) {
+			$encoded = PathMapping::encodeToMojibake($filename);
+			if ($encoded !== null) {
+				return $encoded;
+			}
+		}
+
+		return $filename;
+	}
+
+
+	/**
 	 * Search a filename and extract its content
 	 *
 	 * @param string $filename File path to search
@@ -280,12 +328,16 @@ class Grf
 			return false;
 		}
 
+		// Normalize slashes
+		$filename = str_replace('/', '\\', $filename);
+		$encodedFilename = $this->encodeFilename($filename);
+
 		// Case sensitive search (faster)
-		$position = strpos( $this->fileTable, $filename . "\0");
+		$position = strpos( $this->fileTable, $encodedFilename . "\0");
 
 		// Case insensitive fallback (slower)
 		if ($position === false){
-			$position = stripos( $this->fileTable, $filename . "\0");
+			$position = stripos( $this->fileTable, $encodedFilename . "\0");
 		}
 
 		// File not found
@@ -295,16 +347,18 @@ class Grf
 		}
 
 		// Move position past the filename and null terminator
-		$position += strlen($filename) + 1;
+		$position += strlen($encodedFilename) + 1;
 
 		// Extract file info from fileList
 		// Structure differs between 0x200 (32-bit offset) and 0x300 (64-bit offset)
 		if ($this->uses64BitOffsets) {
 			// GRF 0x300: pack_size(4) + length_aligned(4) + real_size(4) + flags(1) + position(8) = 21 bytes
-			$fileInfo = unpack('Lpack_size/Llength_aligned/Lreal_size/Cflags/Qposition', substr($this->fileTable, $position, 21));
+			$data = substr($this->fileTable, $position, 21);
+			$fileInfo = unpack('Lpack_size/Llength_aligned/Lreal_size/Cflags/Qposition', $data);
 		} else {
 			// GRF 0x200: pack_size(4) + length_aligned(4) + real_size(4) + flags(1) + position(4) = 17 bytes
-			$fileInfo = unpack('Lpack_size/Llength_aligned/Lreal_size/Cflags/Lposition', substr($this->fileTable, $position, 17));
+			$data = substr($this->fileTable, $position, 17);
+			$fileInfo = unpack('Lpack_size/Llength_aligned/Lreal_size/Cflags/Lposition', $data);
 		}
 
 		// Extract file content
@@ -315,8 +369,11 @@ class Grf
 		$isEncrypted = ($flags !== self::FLAG_FILE);
 		$readSize = $isEncrypted ? $fileInfo['length_aligned'] : $fileInfo['pack_size'];
 
-		// Debugging
-		Debug::write("File: $filename, Flags: $flags, ReadSize: $readSize, PackSize: {$fileInfo['pack_size']}, Aligned: {$fileInfo['length_aligned']}", 'info');
+		// Safety check for readSize
+		if ($readSize > 100 * 1024 * 1024) { // 100MB limit
+			Debug::write("ReadSize too large ($readSize), likely wrong offset in fileTable for $filename", 'error');
+			return false;
+		}
 
 		$compressedData = fread($this->fp, $readSize);
 
@@ -430,6 +487,16 @@ class Grf
 			// Extract filename
 			$filename = substr($this->fileTable, $offset, $nullPos - $offset);
 			
+			// Decode filename if encoding is set
+			if ($this->encoding && extension_loaded('mbstring')) {
+				$filename = mb_convert_encoding($filename, 'UTF-8', $this->encoding);
+			} elseif (class_exists('PathMapping') && PathMapping::isMojibake($filename)) {
+				$decoded = PathMapping::decodeMojibake($filename);
+				if ($decoded !== null) {
+					$filename = $decoded;
+				}
+			}
+
 			if (strlen($filename) > 0) {
 				$files[] = $filename;
 			}

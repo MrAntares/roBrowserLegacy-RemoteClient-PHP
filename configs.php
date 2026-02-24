@@ -165,6 +165,17 @@
 
 
         /**
+         * GRF Filename Encoding
+         * Common values: 
+         * - CP949 (Korean) - Default
+         * - CP874 (Thai)
+         * - ISO-8859-1 (Western)
+         * - UTF-8 (Modern/Repacked GRFs)
+         */
+        'GRF_ENCODING'               => getenv('GRF_ENCODING') ? getenv('GRF_ENCODING') : 'CP949',
+
+
+        /**
          * Warm Cache Settings
          * Pre-load frequently accessed files into cache at startup
          */
