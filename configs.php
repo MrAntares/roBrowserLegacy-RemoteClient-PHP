@@ -197,4 +197,12 @@
          * Default: 50 MB
          */
         'WARM_CACHE_MAX_MEMORY_MB'   => getenv('WARM_CACHE_MAX_MEMORY_MB') ? (int)getenv('WARM_CACHE_MAX_MEMORY_MB') : 50,
+
+        /**
+         * Persistent Index Cache Settings
+         * Caches the file index (GRF contents and data directory scan) to avoid
+         * overhead on every request.
+         */
+        'INDEX_CACHE_ENABLED'        => getenv('INDEX_CACHE_ENABLED') ? filter_var(getenv('INDEX_CACHE_ENABLED'), FILTER_VALIDATE_BOOLEAN) : true,
+        'INDEX_CACHE_DIR'            => getenv('INDEX_CACHE_DIR') ? getenv('INDEX_CACHE_DIR') : 'cache/',
     );
