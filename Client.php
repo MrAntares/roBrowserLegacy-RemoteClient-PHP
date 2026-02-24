@@ -60,22 +60,55 @@ final class Client
 
 
 	/**
+	 * @var array Cache configuration
+	 */
+	static private $indexCacheConfig = [
+		'enabled' => true,
+		'dir' => 'cache/',
+		'encoding' => 'CP949'
+	];
+
+
+	/**
 	 * Initialize client file
 	 *
 	 * @param bool $search_data_dir Whether to index the data directory
 	 * @param array $cacheConfig Cache configuration (enabled, maxFiles, maxMemoryMB)
+	 * @param string $grfEncoding Encoding for filenames in GRFs (e.g. 'CP949')
 	 */
-	static public function init($search_data_dir, $cacheConfig = array())
+	static public function init($search_data_dir, $cacheConfig = array(), $grfEncoding = 'CP949')
 	{
 		// Initialize LRU cache
 		self::initCache($cacheConfig);
 
-        if($search_data_dir) {
-            $iterator = new RecursiveIteratorIterator(new RecursiveDirectoryIterator(getcwd().'/data', FilesystemIterator::SKIP_DOTS));
-            foreach ($iterator as $fi) {
-                self::$FileList[] = $fi->getPathname();
-            }
-        }
+		// Initialize Index Cache Config
+		self::$indexCacheConfig['encoding'] = $grfEncoding;
+		if (isset($GLOBALS['CONFIGS'])) {
+			self::$indexCacheConfig['enabled'] = isset($GLOBALS['CONFIGS']['INDEX_CACHE_ENABLED']) ? $GLOBALS['CONFIGS']['INDEX_CACHE_ENABLED'] : true;
+			self::$indexCacheConfig['dir'] = isset($GLOBALS['CONFIGS']['INDEX_CACHE_DIR']) ? $GLOBALS['CONFIGS']['INDEX_CACHE_DIR'] : 'cache/';
+		}
+
+		// Set GRF encoding
+		foreach (self::$grfs as $grf) {
+			$grf->setEncoding($grfEncoding);
+		}
+
+		if($search_data_dir) {
+			$cacheFile = self::getIndexCachePath('filelist');
+			$cacheKey = self::getFileListCacheKey();
+
+			if (self::$indexCacheConfig['enabled'] && ($cached = self::loadIndexCache($cacheFile, $cacheKey))) {
+				self::$FileList = $cached;
+			} else {
+				$iterator = new RecursiveIteratorIterator(new RecursiveDirectoryIterator(getcwd().'/data', FilesystemIterator::SKIP_DOTS));
+				foreach ($iterator as $fi) {
+					self::$FileList[] = $fi->getPathname();
+				}
+				if (self::$indexCacheConfig['enabled']) {
+					self::saveIndexCache($cacheFile, $cacheKey, self::$FileList);
+				}
+			}
+		}
 
         if (empty(self::$data_ini)) {
 			Debug::write('No DATA.INI file defined in configs ?');
@@ -120,6 +153,7 @@ final class Client
 
 			self::$grfs[$index] = new Grf($info['dirname'] . '/' . $grf_filename);
 			self::$grfs[$index]->filename = $grf_filename;
+			self::$grfs[$index]->setEncoding($grfEncoding);
 		}
 
 		// Build file index for O(1) lookups
@@ -135,6 +169,16 @@ final class Client
 	static private function buildFileIndex()
 	{
 		if (self::$indexBuilt) {
+			return;
+		}
+
+		$cacheFile = self::getIndexCachePath('grfindex');
+		$cacheKey = self::getGrfIndexCacheKey();
+
+		if (self::$indexCacheConfig['enabled'] && ($cached = self::loadIndexCache($cacheFile, $cacheKey))) {
+			self::$fileIndex = $cached;
+			self::$indexBuilt = true;
+			Debug::write("File index loaded from cache: " . count(self::$fileIndex) . " unique files", 'success');
 			return;
 		}
 
@@ -172,6 +216,98 @@ final class Client
 		$elapsed = round((microtime(true) - $startTime) * 1000, 2);
 		
 		Debug::write("File index built: " . count(self::$fileIndex) . " unique files from {$totalFiles} total entries in {$elapsed}ms", 'success');
+
+		if (self::$indexCacheConfig['enabled']) {
+			self::saveIndexCache($cacheFile, $cacheKey, self::$fileIndex);
+		}
+	}
+
+
+	/**
+	 * Get path to cache file
+	 * 
+	 * @param string $type Cache type ('filelist' or 'grfindex')
+	 * @return string File path
+	 */
+	static private function getIndexCachePath($type)
+	{
+		$dir = rtrim(self::$indexCacheConfig['dir'], '/') . '/';
+		if (!is_dir($dir)) {
+			@mkdir($dir, 0777, true);
+		}
+		return $dir . 'index_' . $type . '.cache';
+	}
+
+
+	/**
+	 * Get cache key for file list
+	 * 
+	 * @return string Cache key
+	 */
+	static private function getFileListCacheKey()
+	{
+		$dataPath = getcwd() . '/data';
+		$mtime = file_exists($dataPath) ? filemtime($dataPath) : 0;
+		return md5($dataPath . '_' . $mtime);
+	}
+
+
+	/**
+	 * Get cache key for GRF index
+	 * 
+	 * @return string Cache key
+	 */
+	static private function getGrfIndexCacheKey()
+	{
+		$parts = [self::$indexCacheConfig['encoding']];
+		foreach (self::$grfs as $grf) {
+			$parts[] = $grf->filename . ':' . (file_exists($grf->filename) ? filemtime($grf->filename) : 0);
+		}
+		return md5(implode('|', $parts));
+	}
+
+
+	/**
+	 * Load index from cache file
+	 * 
+	 * @param string $file Cache file path
+	 * @param string $key Cache key
+	 * @return array|false Cached data or false
+	 */
+	static private function loadIndexCache($file, $key)
+	{
+		if (!file_exists($file)) {
+			return false;
+		}
+
+		$content = file_get_contents($file);
+		if ($content === false) {
+			return false;
+		}
+
+		$data = unserialize($content);
+		if (!is_array($data) || !isset($data['key']) || !isset($data['value']) || $data['key'] !== $key) {
+			return false;
+		}
+
+		return $data['value'];
+	}
+
+
+	/**
+	 * Save index to cache file
+	 * 
+	 * @param string $file Cache file path
+	 * @param string $key Cache key
+	 * @param array $value Data to cache
+	 */
+	static private function saveIndexCache($file, $key, $value)
+	{
+		$data = [
+			'key' => $key,
+			'value' => $value
+		];
+		file_put_contents($file, serialize($data));
 	}
 
 
@@ -272,6 +408,7 @@ final class Client
 		$local_path        .= str_replace('\\', '/', $path );
 		$local_pathEncoded  = mb_convert_encoding($local_path, 'UTF-8');
 		$grf_path           = str_replace('/', '\\', $path );
+		$content = null;
 
 		Debug::write('Searching file ' . $path . '...', 'title');
 
@@ -460,8 +597,8 @@ final class Client
     /**
      * Search files in the GRF file and on the data directory.
      *
-     * @param {string} regex
-     * @return array {Array} file list
+     * @param string $filter
+     * @return array file list
      */
 	static public function search($filter) {
 		$out = array();

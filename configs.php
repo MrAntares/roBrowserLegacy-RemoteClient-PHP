@@ -165,6 +165,17 @@
 
 
         /**
+         * GRF Filename Encoding
+         * Common values: 
+         * - CP949 (Korean) - Default
+         * - CP874 (Thai)
+         * - ISO-8859-1 (Western)
+         * - UTF-8 (Modern/Repacked GRFs)
+         */
+        'GRF_ENCODING'               => getenv('GRF_ENCODING') ? getenv('GRF_ENCODING') : 'CP949',
+
+
+        /**
          * Warm Cache Settings
          * Pre-load frequently accessed files into cache at startup
          */
@@ -186,4 +197,12 @@
          * Default: 50 MB
          */
         'WARM_CACHE_MAX_MEMORY_MB'   => getenv('WARM_CACHE_MAX_MEMORY_MB') ? (int)getenv('WARM_CACHE_MAX_MEMORY_MB') : 50,
+
+        /**
+         * Persistent Index Cache Settings
+         * Caches the file index (GRF contents and data directory scan) to avoid
+         * overhead on every request.
+         */
+        'INDEX_CACHE_ENABLED'        => getenv('INDEX_CACHE_ENABLED') ? filter_var(getenv('INDEX_CACHE_ENABLED'), FILTER_VALIDATE_BOOLEAN) : true,
+        'INDEX_CACHE_DIR'            => getenv('INDEX_CACHE_DIR') ? getenv('INDEX_CACHE_DIR') : 'cache/',
     );

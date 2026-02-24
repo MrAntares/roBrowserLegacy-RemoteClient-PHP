@@ -4,6 +4,7 @@
 require_once('Debug.php');
 require_once('LRUCache.php');
 require_once('Grf.php');
+require_once('GrfDes.php');
 require_once('Bmp.php');
 require_once('Client.php');
 require_once('Compression.php');
@@ -51,7 +52,7 @@ Client::init($CONFIGS['CLIENT_ENABLESEARCH'], array(
     'enabled' => $CONFIGS['CACHE_ENABLED'],
     'maxFiles' => $CONFIGS['CACHE_MAX_FILES'],
     'maxMemoryMB' => $CONFIGS['CACHE_MAX_MEMORY_MB'],
-));
+), $CONFIGS['GRF_ENCODING']);
 
 
 /**
