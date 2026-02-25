@@ -555,7 +555,7 @@ final class Client
 	 */
 	static public function store($path, $content)
 	{
-		$path         = mb_convert_encoding($path, 'UTF-8', 'ISO-8859-1');
+		// $path         = mb_convert_encoding($path, 'UTF-8', 'ISO-8859-1'); // comment this seems to save the file in the correct folder idk why
 		$current_path = self::$path;
 		$local_path   = $current_path . str_replace('\\', '/', $path);
 		$parent_path  = preg_replace("/[^\/]+$/", '', $local_path);
