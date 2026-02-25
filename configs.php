@@ -10,7 +10,7 @@
          * Note: once the bugs are resolved, set it to false else roBrowser will not be
          * able to work properly.
          */
-        'DEBUG'               => getenv('DEBUG') ?? false,
+        'DEBUG'               => getenv('DEBUG') ? getenv('DEBUG') : false,
 
 
         /**
@@ -20,7 +20,7 @@
          * Note: The files required in this directory are DATA.INI and your GRFs files.
          *       All others files will not be read.
          */
-        'CLIENT_RESPATH'               =>     getenv('CLIENT_RESPATH') ?? 'resources/',
+        'CLIENT_RESPATH'               =>     getenv('CLIENT_RESPATH') ? getenv('CLIENT_RESPATH') : 'resources/',
 
 
         /**
@@ -37,7 +37,7 @@
          *	1=rdata.grf
          *	2=data.grf
          */
-        'CLIENT_DATAINI'               =>     getenv('CLIENT_DATAINI') ?? 'DATA.INI',
+        'CLIENT_DATAINI'               =>     getenv('CLIENT_DATAINI') ? getenv('CLIENT_DATAINI') : 'DATA.INI',
 
 
         /**
@@ -47,7 +47,7 @@
          *
          * Note: it required write access to the data folder.
          */
-        'CLIENT_AUTOEXTRACT'               => getenv('CLIENT_AUTOEXTRACT') ?? true,
+        'CLIENT_AUTOEXTRACT'               => getenv('CLIENT_AUTOEXTRACT') ? getenv('CLIENT_AUTOEXTRACT') : true,
 
 
         /**
@@ -57,14 +57,14 @@
          * If you don't use the Grf Viewer, Model Viewer, Map Viewer and Str Viewer you
          * can just disable this feature.
          */
-        'CLIENT_ENABLESEARCH'               => getenv('CLIENT_ENABLESEARCH') ?? false,
+        'CLIENT_ENABLESEARCH'               => getenv('CLIENT_ENABLESEARCH') ? getenv('CLIENT_ENABLESEARCH') : false,
 
 
         /**
          * Set the script memory limit. This value should follow the php documentation on how to set the values.
          * @see https://www.php.net/manual/en/ini.core.php#ini.memory-limit
          */
-        'MEMORY_LIMIT'               =>     getenv('MEMORY_LIMIT') ?? '1000M',
+        'MEMORY_LIMIT'               =>     getenv('MEMORY_LIMIT') ? getenv('MEMORY_LIMIT') : '1000M',
 
 
         /**
@@ -78,14 +78,14 @@
          * 
          * Note: Apache and Nginx already compress responses, so this is not needed, unless you can't change the server configuration.
          */
-        'COMPRESSION_ENABLED'        => getenv('COMPRESSION_ENABLED') ?? false,
+        'COMPRESSION_ENABLED'        => getenv('COMPRESSION_ENABLED') ? getenv('COMPRESSION_ENABLED') : false,
 
         /**
          * Minimum file size in bytes to apply compression
          * Files smaller than this won't be compressed (overhead not worth it)
          * Default: 1024 (1KB)
          */
-        'COMPRESSION_MIN_SIZE'       => getenv('COMPRESSION_MIN_SIZE') ?? 1024,
+        'COMPRESSION_MIN_SIZE'       => getenv('COMPRESSION_MIN_SIZE') ? getenv('COMPRESSION_MIN_SIZE') : 1024,
 
         /**
          * Compression level (1-9)
@@ -93,7 +93,7 @@
          * 9 = slowest, best compression
          * 6 = balanced (recommended)
          */
-        'COMPRESSION_LEVEL'          => getenv('COMPRESSION_LEVEL') ?? 6,
+        'COMPRESSION_LEVEL'          => getenv('COMPRESSION_LEVEL') ? getenv('COMPRESSION_LEVEL') : 6,
 
         /**
          * Enable LRU (Least Recently Used) cache for file contents.
@@ -105,7 +105,7 @@
          * Note: this feature is intead to be used in a daemon mode. If you are not using a daemon mode, 
          * it's recommended to disable this feature.
          */
-        'CACHE_ENABLED'               => getenv('CACHE_ENABLED') ?? false,
+        'CACHE_ENABLED'               => getenv('CACHE_ENABLED') ? getenv('CACHE_ENABLED') : false,
 
 
         /**
@@ -114,7 +114,7 @@
          *
          * Recommended: 100-500 depending on your server's memory
          */
-        'CACHE_MAX_FILES'               => getenv('CACHE_MAX_FILES') ?? 100,
+        'CACHE_MAX_FILES'               => getenv('CACHE_MAX_FILES') ? getenv('CACHE_MAX_FILES') : 100,
 
 
         /**
@@ -124,7 +124,7 @@
          * Recommended: 128-512 MB depending on your server's available memory
          * Note: This should be less than your PHP memory_limit
          */
-        'CACHE_MAX_MEMORY_MB'               => getenv('CACHE_MAX_MEMORY_MB') ?? 256,
+        'CACHE_MAX_MEMORY_MB'               => getenv('CACHE_MAX_MEMORY_MB') ? getenv('CACHE_MAX_MEMORY_MB') : 256,
 
 
         /**
@@ -136,19 +136,19 @@
          * Enable missing files logging
          * When enabled, files that are requested but not found will be logged
          */
-        'MISSING_LOG_ENABLED'        => getenv('MISSING_LOG_ENABLED') ?? false,
+        'MISSING_LOG_ENABLED'        => getenv('MISSING_LOG_ENABLED') ? getenv('MISSING_LOG_ENABLED') : false,
 
         /**
          * Path to the missing files log
          * Default: logs/missing-files.log
          */
-        'MISSING_LOG_FILE'           => getenv('MISSING_LOG_FILE') ?? 'logs/missing-files.log',
+        'MISSING_LOG_FILE'           => getenv('MISSING_LOG_FILE') ? getenv('MISSING_LOG_FILE') : 'logs/missing-files.log',
 
         /**
          * Maximum entries to keep in memory per request
          * Default: 1000
          */
-        'MISSING_LOG_MAX_ENTRIES'    => getenv('MISSING_LOG_MAX_ENTRIES') ?? 1000,
+        'MISSING_LOG_MAX_ENTRIES'    => getenv('MISSING_LOG_MAX_ENTRIES') ? getenv('MISSING_LOG_MAX_ENTRIES') : 1000,
 
 
         /**
@@ -160,13 +160,13 @@
          * Enable path mapping for Korean filenames
          * When enabled, Korean UTF-8 paths will be resolved to their GRF equivalents
          */
-        'PATH_MAPPING_ENABLED'       => getenv('PATH_MAPPING_ENABLED') ?? true,
+        'PATH_MAPPING_ENABLED'       => getenv('PATH_MAPPING_ENABLED') ? getenv('PATH_MAPPING_ENABLED') : true,
 
         /**
          * Path to the mapping file (JSON format)
          * Default: path-mapping.json
          */
-        'PATH_MAPPING_FILE'          => getenv('PATH_MAPPING_FILE') ?? 'path-mapping.json',
+        'PATH_MAPPING_FILE'          => getenv('PATH_MAPPING_FILE') ? getenv('PATH_MAPPING_FILE') : 'path-mapping.json',
 
 
         /**
@@ -177,7 +177,7 @@
          * - ISO-8859-1 (Western)
          * - UTF-8 (Modern/Repacked GRFs)
          */
-        'GRF_ENCODING'               => getenv('GRF_ENCODING') ?? 'CP949',
+        'GRF_ENCODING'               => getenv('GRF_ENCODING') ? getenv('GRF_ENCODING') : 'CP949',
 
 
         /**
@@ -192,19 +192,19 @@
          * Note: this feature is intead to be used in a daemon mode. If you are not using a daemon mode, 
          * it's recommended to disable this feature.
          */
-        'WARM_CACHE_ENABLED'         => getenv('WARM_CACHE_ENABLED') ?? false,
+        'WARM_CACHE_ENABLED'         => getenv('WARM_CACHE_ENABLED') ? getenv('WARM_CACHE_ENABLED') : false,
 
         /**
          * Maximum number of files to warm
          * Default: 50
          */
-        'WARM_CACHE_MAX_FILES'       => getenv('WARM_CACHE_MAX_FILES') ?? 50,
+        'WARM_CACHE_MAX_FILES'       => getenv('WARM_CACHE_MAX_FILES') ? getenv('WARM_CACHE_MAX_FILES') : 50,
 
         /**
          * Maximum memory to use for warming in megabytes
          * Default: 50 MB
          */
-        'WARM_CACHE_MAX_MEMORY_MB'   => getenv('WARM_CACHE_MAX_MEMORY_MB') ?? 50,
+        'WARM_CACHE_MAX_MEMORY_MB'   => getenv('WARM_CACHE_MAX_MEMORY_MB') ? getenv('WARM_CACHE_MAX_MEMORY_MB') : 50,
 
         /**
          * Persistent Index Cache Settings
@@ -214,6 +214,6 @@
          * Note: this feature is intead to be used in a daemon mode. If you are not using a daemon mode, 
          * it's recommended to disable this feature.
          */
-        'INDEX_CACHE_ENABLED'        => getenv('INDEX_CACHE_ENABLED') ?? false,
-        'INDEX_CACHE_DIR'            => getenv('INDEX_CACHE_DIR') ?? 'cache/',
+        'INDEX_CACHE_ENABLED'        => getenv('INDEX_CACHE_ENABLED') ? getenv('INDEX_CACHE_ENABLED') : false,
+        'INDEX_CACHE_DIR'            => getenv('INDEX_CACHE_DIR') ? getenv('INDEX_CACHE_DIR') : 'cache/',
     );
