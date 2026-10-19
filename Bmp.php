@@ -13,6 +13,10 @@
 
 function imagecreatefrombmpstring($data) {
 
+	if (!function_exists('imagecreatetruecolor')) {
+		return false;
+	}
+
 	// Read header
 	extract( unpack("a2signature/x8/Voffset/x4/Vwidth/Vheight/x2/vbits", substr($data, 0, 30)));
 	if ($signature !== 'BM') {

@@ -100,6 +100,7 @@ final class HealthCheck
                 'fileIndex' => true,
                 'grf0x300' => true,
                 'healthCheck' => true,
+                'bmpConversion' => function_exists('imagecreatetruecolor'),
             ]
         ];
     }
@@ -121,6 +122,9 @@ final class HealthCheck
                 'zlib' => extension_loaded('zlib'),
                 'mbstring' => extension_loaded('mbstring'),
                 'gd' => extension_loaded('gd'),
+            ],
+            'functions' => [
+                'imagecreatetruecolor' => function_exists('imagecreatetruecolor'),
             ],
             'sapi' => php_sapi_name(),
         ];
@@ -268,9 +272,13 @@ final class HealthCheck
             $warnings[] = 'Memory usage is above 80% of limit';
         }
 
-        // Check PHP extensions
+        // Check PHP extensions and functions
         if (!$status['php']['extensions']['zlib']) {
             $warnings[] = 'zlib extension not loaded - compression unavailable';
+        }
+
+        if (!$status['php']['functions']['imagecreatetruecolor']) {
+            $warnings[] = 'imagecreatetruecolor() not available - BMP to PNG image conversion disabled (enable GD extension)';
         }
 
         // Build summary

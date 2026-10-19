@@ -575,9 +575,11 @@ final class Client
 		// storing bmp images as png
 		if (strtolower(pathinfo($path, PATHINFO_EXTENSION)) === 'bmp') {
 			$img  = imagecreatefrombmpstring($content);
-			$path = str_ireplace('.bmp', '.png', $local_path);
-			imagepng($img, $path);
-			return file_get_contents($path);
+			if ($img !== false && function_exists('imagepng')) {
+				$path = str_ireplace('.bmp', '.png', $local_path);
+				imagepng($img, $path);
+				return file_get_contents($path);
+			}
 		}
 
 		// Saving file
