@@ -26,11 +26,6 @@ ErrorDocument 404 /remote/index.php
 Options +FollowSymlinks -MultiViews
 RewriteEngine On
 
-<IfModule mod_speling.c>
-	CheckSpelling On
-	CheckCaseOnly On
-</IfModule>
-
 # Replace bmp to png
 RewriteRule ^(.*)\.bmp$   $1\.png [NC,QSA]
 
