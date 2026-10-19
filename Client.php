@@ -414,20 +414,27 @@ final class Client
 			}
 		}
 
-		// Read from local data folder
-		if (file_exists($local_pathEncoded) && !is_dir($local_pathEncoded) && is_readable($local_pathEncoded)) {
-			Debug::write('File found at ' . $local_path, 'success');
+		// Read from local data folder (with case-insensitive resolution for case-sensitive filesystems)
+		$resolvedLocalPath = self::resolveLocalPath($local_pathEncoded);
+		if ($resolvedLocalPath === false && strtolower(pathinfo($local_pathEncoded, PATHINFO_EXTENSION)) === 'bmp') {
+			$resolvedLocalPath = self::resolveLocalPath(preg_replace('/\.bmp$/i', '.png', $local_pathEncoded));
+		}
 
-			$content = file_get_contents($local_pathEncoded);
+		if ($resolvedLocalPath !== false && is_readable($resolvedLocalPath)) {
+			Debug::write('File found at ' . $resolvedLocalPath, 'success');
+
+			$content = file_get_contents($resolvedLocalPath);
 
 			// Add to cache
 			if (self::$cache !== null && $content !== false) {
 				self::$cache->set($path, $content);
 			}
 
-			// Store file if auto-extract is enabled
-			if (self::$AutoExtract) {
-				return self::store($path, $content);
+			// Store file if auto-extract is enabled (skip if a .bmp request already resolved to a converted .png)
+			$resolvedExt = strtolower(pathinfo($resolvedLocalPath, PATHINFO_EXTENSION));
+			$requestedExt = strtolower(pathinfo($path, PATHINFO_EXTENSION));
+			if (self::$AutoExtract && $resolvedExt === $requestedExt) {
+				return self::store($resolvedLocalPath, $content);
 			}
 
 			return $content;
@@ -542,6 +549,84 @@ final class Client
 		}
 
 		return false;
+	}
+
+
+	/**
+	 * Resolve a local file path case-insensitively for case-sensitive filesystems.
+	 *
+	 * @param string $path Local path to resolve
+	 * @return string|false Resolved file path if found, or false
+	 */
+	static private function resolveLocalPath($path)
+	{
+		if (file_exists($path) && !is_dir($path)) {
+			return $path;
+		}
+
+		$normalized = str_replace('\\', '/', $path);
+		$prefix = '';
+
+		if (preg_match('/^[A-Za-z]:\//', $normalized, $matches)) {
+			$prefix = rtrim($matches[0], '/');
+			$normalized = substr($normalized, strlen($matches[0]));
+		} elseif (strpos($normalized, '/') === 0) {
+			$prefix = '/';
+			$normalized = ltrim($normalized, '/');
+		}
+
+		$segments = array_values(array_filter(explode('/', $normalized), function ($seg) {
+			return $seg !== '' && $seg !== '.';
+		}));
+
+		if (empty($segments)) {
+			return false;
+		}
+
+		$current = $prefix !== '' ? $prefix : '.';
+
+		foreach ($segments as $segment) {
+			if ($segment === '..') {
+				return false;
+			}
+
+			$candidate = ($current === '.') ? $segment : (rtrim($current, '/') . '/' . $segment);
+			if (file_exists($candidate)) {
+				$current = $candidate;
+				continue;
+			}
+
+			if (!is_dir($current) || !is_readable($current)) {
+				return false;
+			}
+
+			$entries = @scandir($current);
+			if ($entries === false) {
+				return false;
+			}
+
+			$matched = null;
+			$targetLower = function_exists('mb_strtolower') ? mb_strtolower($segment, 'UTF-8') : strtolower($segment);
+
+			foreach ($entries as $entry) {
+				if ($entry === '.' || $entry === '..') {
+					continue;
+				}
+				$entryLower = function_exists('mb_strtolower') ? mb_strtolower($entry, 'UTF-8') : strtolower($entry);
+				if ($entryLower === $targetLower) {
+					$matched = $entry;
+					break;
+				}
+			}
+
+			if ($matched === null) {
+				return false;
+			}
+
+			$current = ($current === '.') ? $matched : (rtrim($current, '/') . '/' . $matched);
+		}
+
+		return (file_exists($current) && !is_dir($current)) ? $current : false;
 	}
 
 

@@ -37,12 +37,14 @@ RUN <<'EOF' cat >> /etc/apache2/sites-available/000-default.conf
 
         <IfModule mod_rewrite.c>
             RewriteEngine On
+            RewriteCond %{REQUEST_FILENAME} !-f
             RewriteRule ^(.*)\.bmp$ $1\.png [NC,QSA]
         </IfModule>
 
         <IfModule mod_speling.c>
             CheckSpelling On
             CheckCaseOnly On
+            CheckBasenameMatch Off
         </IfModule>
     </Directory>
 

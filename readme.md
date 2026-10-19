@@ -333,6 +333,7 @@ Whether running via Docker, a standalone Linux server, or a Windows web server (
 | **`mod_headers`** | **Required** | Sets CORS headers (`Access-Control-Allow-Origin`, `Access-Control-Allow-Headers`) allowing web clients to fetch resources | `a2enmod headers` / `LoadModule headers_module modules/mod_headers.so` |
 | **`mod_mime`** | **Recommended** | Defines custom Ragnarok asset MIME types (`.act`, `.spr`, `.pal`, `.gat`, `.gnd`, `.rsw`, `.rsm`) | Usually enabled by default (`mod_mime.so`) |
 | **`mod_deflate`** (or `mod_gzip`) | **Recommended** | Compresses game assets and text/XML/Lua responses at server level to save bandwidth | `a2enmod deflate` / `LoadModule deflate_module modules/mod_deflate.so` |
+| **`mod_speling`** | Optional | Provides case-insensitive URL correction (`CheckSpelling On`, `CheckCaseOnly On`, `CheckBasenameMatch Off`) | `a2enmod speling` / `LoadModule speling_module modules/mod_speling.so` |
 
 > **Important Apache Directives:**
 > - **`AllowOverride All`** (or `AllowOverride FileInfo Options Limit`) must be enabled in your `<Directory>` configuration so that [.htaccess](.htaccess) takes effect.

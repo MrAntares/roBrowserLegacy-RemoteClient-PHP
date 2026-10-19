@@ -100,7 +100,7 @@ final class HealthCheck
                 'fileIndex' => true,
                 'grf0x300' => true,
                 'healthCheck' => true,
-                'bmpConversion' => function_exists('imagecreatetruecolor'),
+                'bmpConversion' => function_exists('imagecreatetruecolor') && function_exists('imagepng'),
             ]
         ];
     }
@@ -125,6 +125,7 @@ final class HealthCheck
             ],
             'functions' => [
                 'imagecreatetruecolor' => function_exists('imagecreatetruecolor'),
+                'imagepng' => function_exists('imagepng'),
             ],
             'sapi' => php_sapi_name(),
         ];
@@ -277,8 +278,8 @@ final class HealthCheck
             $warnings[] = 'zlib extension not loaded - compression unavailable';
         }
 
-        if (!$status['php']['functions']['imagecreatetruecolor']) {
-            $warnings[] = 'imagecreatetruecolor() not available - BMP to PNG image conversion disabled (enable GD extension)';
+        if (!$status['php']['functions']['imagecreatetruecolor'] || !$status['php']['functions']['imagepng']) {
+            $warnings[] = 'imagecreatetruecolor() and/or imagepng() not available - BMP to PNG image conversion disabled (enable GD extension with PNG support)';
         }
 
         // Build summary
