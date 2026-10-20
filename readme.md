@@ -21,6 +21,12 @@ Because pushing directly the fullclient on a server/ftp can provoke some errors,
 
 ## Quick Start
 
+### Prerequisites
+
+- **Web Server**: Apache (`mod_rewrite`, `mod_headers`) or Nginx (`ngx_http_core`, `ngx_http_fastcgi`, `ngx_http_headers`)
+- **PHP**: 7.4+ (64-bit x64 recommended; **mandatory for GRFs > 2GB**)
+- **PHP Extensions**: `zlib`, `mbstring` (required); `gd` (with TrueColor), `iconv` (recommended)
+
 ### 1. Add your fullclient
 
 Just put your GRFs files and DATA.INI file in the `resources/` directory.
@@ -313,6 +319,85 @@ The webserver will be answering requests on the 80 port.
 
 ```bash
 docker compose --profile apache up --build
+```
+
+### Web Server Requirements & Modules
+
+Whether running via Docker, a standalone Linux server, or a Windows web server (Apache Lounge / XAMPP / IIS), ensure the following web server modules and configurations are present:
+
+#### Apache Modules
+
+| Module | Status | Purpose | How to Enable |
+|--------|--------|---------|---------------|
+| **`mod_rewrite`** | **Required** | Handles URL rewriting: rewrites `.bmp` requests to `.png` and routes missing assets to `index.php` | `a2enmod rewrite` / `LoadModule rewrite_module modules/mod_rewrite.so` |
+| **`mod_headers`** | **Required** | Sets CORS headers (`Access-Control-Allow-Origin`, `Access-Control-Allow-Headers`) allowing web clients to fetch resources | `a2enmod headers` / `LoadModule headers_module modules/mod_headers.so` |
+| **`mod_mime`** | **Recommended** | Defines custom Ragnarok asset MIME types (`.act`, `.spr`, `.pal`, `.gat`, `.gnd`, `.rsw`, `.rsm`) | Usually enabled by default (`mod_mime.so`) |
+| **`mod_deflate`** (or `mod_gzip`) | **Recommended** | Compresses game assets and text/XML/Lua responses at server level to save bandwidth | `a2enmod deflate` / `LoadModule deflate_module modules/mod_deflate.so` |
+| **`mod_speling`** | Optional | Provides case-insensitive URL correction (`CheckSpelling On`, `CheckCaseOnly On`, `CheckBasenameMatch Off`) | `a2enmod speling` / `LoadModule speling_module modules/mod_speling.so` |
+
+> **Important Apache Directives:**
+> - **`AllowOverride All`** (or `AllowOverride FileInfo Options Limit`) must be enabled in your `<Directory>` configuration so that [.htaccess](.htaccess) takes effect.
+> - **`ErrorDocument 404 /remote/index.php`** (or `/index.php` depending on your subpath) routes missing files to the PHP GRF extractor.
+
+#### Nginx Modules
+
+Nginx includes the required modules by default (compiled-in core modules):
+
+| Module | Status | Purpose | Key Directives |
+|--------|--------|---------|----------------|
+| **`ngx_http_core_module`** | **Required** | Core request routing and fallback: `error_page 404 /index.php;` and `try_files $uri $uri/ =404;` | Built-in |
+| **`ngx_http_headers_module`** | **Required** | Sets CORS headers for browser clients | `add_header 'Access-Control-Allow-Origin' '*';` |
+| **`ngx_http_fastcgi_module`** | **Required** | Passes PHP requests to PHP-FPM | `fastcgi_pass`, `fastcgi_param` |
+| **`ngx_http_gzip_module`** | **Recommended** | Compresses responses for custom RO asset types | `gzip on; gzip_types application/ro-action ...;` |
+| **`ngx_http_rewrite_module`** | **Recommended** | URL rewriting and redirect rules | Built-in |
+
+> **Custom MIME Types for Nginx:** Include Ragnarok file types in your configuration (e.g. `/etc/nginx/conf.d/ro-mime-types.conf`):
+> ```nginx
+> types {
+>     application/ro-action   act;
+>     application/ro-sprite   spr;
+>     application/ro-palette  pal;
+>     application/ro-ground   gnd;
+>     application/ro-altitude gat;
+>     application/ro-world    rsw;
+>     application/ro-model    rsm;
+> }
+> ```
+
+### PHP Requirements & Configuration
+
+#### PHP Version & Architecture
+
+| Requirement | Value | Details |
+|-------------|-------|---------|
+| **Minimum Version** | **PHP 7.4.0** | Baseline language compatibility |
+| **Recommended Version** | **PHP 8.1 - 8.5+** | Improved memory efficiency, execution speed, and stability |
+| **Architecture** | **64-bit (x64)** | **CRITICAL for GRFs > 2 GB.** 32-bit (x86) PHP has a signed 32-bit integer ceiling (`PHP_INT_MAX = 2,147,483,647`). Any GRF over 2 GB (such as official `data.grf` at ~4.2 GB) will cause `filesize()` and `fseek()` to overflow and fail. |
+
+#### PHP Extensions
+
+| Extension | Status | Purpose | Impact if Missing |
+|-----------|--------|---------|-------------------|
+| **`zlib`** | **Required** | Decompresses GRF 0x200 / 0x300 file tables and compressed entries (`gzuncompress`); compresses HTTP responses | **Fatal**: GRF archives and files cannot be read |
+| **`mbstring`** | **Required** | Multibyte encoding conversion (UTF-8, CP949 / EUC-KR) and string handling | **Fatal**: Korean paths and filenames will fail to resolve |
+| **`gd`** | **Recommended** | Converts in-game BMP textures to PNG on the fly to accelerate client downloads | BMP files are served raw without PNG conversion; calls to `imagecreatetruecolor()` are skipped safely |
+| **`iconv`** | **Recommended** | Korean path encoding analysis and character set translation (`tools/convert-encoding.php`) | Deep encoding analysis tool will be unavailable |
+| **`opcache`** | **Recommended** | In-memory opcode caching for PHP scripts | Higher CPU usage / slower response times under load |
+
+#### Recommended `php.ini` Directives
+
+```ini
+; Required & recommended extensions
+extension=zlib
+extension=mbstring
+extension=gd
+extension=iconv
+
+; Memory limit (large GRF indexing and cache warming need adequate memory)
+memory_limit = 512M      ; Increase to 1000M for very large archives
+
+; Execution timeout (in seconds)
+max_execution_time = 60
 ```
 
 ## FAQ

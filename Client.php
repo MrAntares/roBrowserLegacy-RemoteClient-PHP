@@ -414,20 +414,28 @@ final class Client
 			}
 		}
 
-		// Read from local data folder
-		if (file_exists($local_pathEncoded) && !is_dir($local_pathEncoded) && is_readable($local_pathEncoded)) {
-			Debug::write('File found at ' . $local_path, 'success');
+		// Read from local data folder (with case-insensitive resolution for case-sensitive filesystems)
+		$resolvedLocalPath = self::resolveLocalPath($local_pathEncoded);
+		if ($resolvedLocalPath === false && strtolower(pathinfo($local_pathEncoded, PATHINFO_EXTENSION)) === 'bmp') {
+			$resolvedLocalPath = self::resolveLocalPath(preg_replace('/\.bmp$/i', '.png', $local_pathEncoded));
+		}
 
-			$content = file_get_contents($local_pathEncoded);
+		if ($resolvedLocalPath !== false && is_readable($resolvedLocalPath)) {
+			Debug::write('File found at ' . $resolvedLocalPath, 'success');
+
+			$content = file_get_contents($resolvedLocalPath);
 
 			// Add to cache
 			if (self::$cache !== null && $content !== false) {
 				self::$cache->set($path, $content);
 			}
 
-			// Store file if auto-extract is enabled
-			if (self::$AutoExtract) {
-				return self::store($path, $content);
+			// Store file if auto-extract is enabled (skip if a .bmp request already resolved to a converted .png)
+			$resolvedExt = strtolower(pathinfo($resolvedLocalPath, PATHINFO_EXTENSION));
+			$requestedExt = strtolower(pathinfo($path, PATHINFO_EXTENSION));
+			if (self::$AutoExtract && $resolvedExt === $requestedExt) {
+				$relativeResolvedPath = self::getRelativePath($resolvedLocalPath, $path);
+				return self::store($relativeResolvedPath, $content);
 			}
 
 			return $content;
@@ -545,18 +553,137 @@ final class Client
 	}
 
 
+	/**
+	 * Resolve a local file path case-insensitively for case-sensitive filesystems.
+	 *
+	 * @param string $path Local path to resolve
+	 * @return string|false Resolved file path if found, or false
+	 */
+	static private function resolveLocalPath($path)
+	{
+		if (file_exists($path) && !is_dir($path)) {
+			return $path;
+		}
 
+		$normalized = str_replace('\\', '/', $path);
+		$prefix = '';
+
+		if (preg_match('/^[A-Za-z]:\//', $normalized, $matches)) {
+			$prefix = rtrim($matches[0], '/');
+			$normalized = substr($normalized, strlen($matches[0]));
+		} elseif (strpos($normalized, '/') === 0) {
+			$prefix = '/';
+			$normalized = ltrim($normalized, '/');
+		}
+
+		$segments = array_values(array_filter(explode('/', $normalized), function ($seg) {
+			return $seg !== '' && $seg !== '.';
+		}));
+
+		if (empty($segments)) {
+			return false;
+		}
+
+		$current = $prefix !== '' ? $prefix : '.';
+
+		foreach ($segments as $segment) {
+			if ($segment === '..') {
+				return false;
+			}
+
+			$candidate = ($current === '.') ? $segment : (rtrim($current, '/') . '/' . $segment);
+			if (file_exists($candidate)) {
+				$current = $candidate;
+				continue;
+			}
+
+			if (!is_dir($current) || !is_readable($current)) {
+				return false;
+			}
+
+			$entries = @scandir($current);
+			if ($entries === false) {
+				return false;
+			}
+
+			$matched = null;
+			$targetLower = function_exists('mb_strtolower') ? mb_strtolower($segment, 'UTF-8') : strtolower($segment);
+
+			foreach ($entries as $entry) {
+				if ($entry === '.' || $entry === '..') {
+					continue;
+				}
+				$entryLower = function_exists('mb_strtolower') ? mb_strtolower($entry, 'UTF-8') : strtolower($entry);
+				if ($entryLower === $targetLower) {
+					$matched = $entry;
+					break;
+				}
+			}
+
+			if ($matched === null) {
+				return false;
+			}
+
+			$current = ($current === '.') ? $matched : (rtrim($current, '/') . '/' . $matched);
+		}
+
+		return (file_exists($current) && !is_dir($current)) ? $current : false;
+	}
+ 
+ 
+	/**
+	 * Convert a resolved local path back to an asset-relative path adjusted for resolved spelling.
+	 *
+	 * @param string $resolvedPath Full resolved local path
+	 * @param string $requestedPath Original requested asset path
+	 * @return string Asset-relative path adjusted for resolved spelling
+	 */
+	static private function getRelativePath($resolvedPath, $requestedPath)
+	{
+		$resolvedNormalized = str_replace('\\', '/', $resolvedPath);
+
+		if (self::$path !== '') {
+			$prefixNormalized = str_replace('\\', '/', self::$path);
+			$trimmedPrefix = rtrim($prefixNormalized, '/') . '/';
+
+			if (stripos($resolvedNormalized, $trimmedPrefix) === 0) {
+				return substr($resolvedNormalized, strlen($trimmedPrefix));
+			}
+
+			if (stripos($resolvedNormalized, $prefixNormalized) === 0) {
+				return ltrim(substr($resolvedNormalized, strlen($prefixNormalized)), '/');
+			}
+		}
+
+		$assetSegments = array_values(array_filter(explode('/', str_replace('\\', '/', $requestedPath)), function ($seg) {
+			return $seg !== '' && $seg !== '.';
+		}));
+
+		$resolvedSegments = array_values(array_filter(explode('/', $resolvedNormalized), function ($seg) {
+			return $seg !== '' && $seg !== '.';
+		}));
+
+		$assetCount = count($assetSegments);
+		if ($assetCount > 0 && count($resolvedSegments) >= $assetCount) {
+			return implode('/', array_slice($resolvedSegments, -$assetCount));
+		}
+
+		return ltrim($resolvedNormalized, '/');
+	}
+ 
+ 
 	/**
 	 * Storing file in data folder (convert it if needed)
 	 *
-	 * @param {string} save to path
-	 * @param {string} file content
-	 * @return {string} content
+	 * @param string $path Save to path (asset-relative path, or full/absolute path if $is_absolute is true)
+	 * @param string $content File content
+	 * @param bool $is_absolute Whether $path is already an absolute/full path
+	 * @return string Content
 	 */
-	static public function store($path, $content)
+	static public function store($path, $content, $is_absolute = false)
 	{
 		// $path         = mb_convert_encoding($path, 'UTF-8', 'ISO-8859-1'); // comment this seems to save the file in the correct folder idk why
-		$current_path = self::$path;
+		$current_path = $is_absolute ? '' : self::$path;
 		$local_path   = $current_path . str_replace('\\', '/', $path);
 		$parent_path  = preg_replace("/[^\/]+$/", '', $local_path);
 
@@ -575,9 +702,11 @@ final class Client
 		// storing bmp images as png
 		if (strtolower(pathinfo($path, PATHINFO_EXTENSION)) === 'bmp') {
 			$img  = imagecreatefrombmpstring($content);
-			$path = str_ireplace('.bmp', '.png', $local_path);
-			imagepng($img, $path);
-			return file_get_contents($path);
+			if ($img !== false && function_exists('imagepng')) {
+				$path = str_ireplace('.bmp', '.png', $local_path);
+				imagepng($img, $path);
+				return file_get_contents($path);
+			}
 		}
 
 		// Saving file

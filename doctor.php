@@ -51,6 +51,7 @@ What this tool validates:
   ✓ PHP version (minimum 7.4.0)
   ✓ Required extensions (zlib, mbstring)
   ✓ Optional extensions (gd, iconv)
+  ✓ Image processing (imagecreatetruecolor for BMP to PNG conversion)
   ✓ Required files and directories
   ✓ Configuration (DATA.INI, memory limit)
   ✓ GRF file format (0x200 / 0x300)

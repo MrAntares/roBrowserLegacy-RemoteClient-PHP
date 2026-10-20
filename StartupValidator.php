@@ -207,6 +207,18 @@ final class StartupValidator
             }
         }
 
+        // Check imagecreatetruecolor and imagepng for BMP to PNG conversion
+        $hasImageCreateTrueColor = function_exists('imagecreatetruecolor');
+        $hasImagePng = function_exists('imagepng');
+        $results['functions']['imagecreatetruecolor'] = $hasImageCreateTrueColor;
+        $results['functions']['imagepng'] = $hasImagePng;
+
+        if ($hasImageCreateTrueColor && $hasImagePng) {
+            $this->addInfo("Functions 'imagecreatetruecolor' and 'imagepng' available (BMP conversion enabled)");
+        } else {
+            $this->addWarning("Functions 'imagecreatetruecolor' and/or 'imagepng' are not available - BMP to PNG image conversion will fail (enable GD extension with TrueColor and PNG support)");
+        }
+
         $this->validationResults['extensions'] = $results;
         return $results['valid'];
     }

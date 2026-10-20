@@ -16,7 +16,7 @@ class GrfDES
 	/**
 	 * DES block size in bytes
 	 */
-	private const int BLOCK_SIZE = 8;
+	private const BLOCK_SIZE = 8;
 
 	/**
 	 * Initial Permutation table

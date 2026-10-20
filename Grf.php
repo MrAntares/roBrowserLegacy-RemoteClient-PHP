@@ -172,7 +172,7 @@ class Grf
 	public function load()
 	{
 		if (empty($this->fp)) {
-			Debug::write('File "'. $this->filename .'" not opened yet', 'error');
+			Debug::write('File "'. $this->filename .'" not opened yet (You may be running an x86 version of PHP that can\'t read 2GB+ files. Please upgrade to x64)', 'error');
 			return;
 		}
 
